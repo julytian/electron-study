@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: electron-lab-scaffold
+appId: com.electronlab.app
+productName: Electron Lab
 directories:
   buildResources: build
 files:
@@ -11,8 +11,9 @@ files:
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
   - resources/**
+  - node_modules/better-sqlite3/**
 win:
-  executableName: electron-lab-scaffold
+  executableName: ElectronLab
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
