@@ -132,7 +132,7 @@ export interface InvokeMap {
   'window:set-fullscreen': { args: [flag: boolean]; result: null }
   'window:set-overlay': { args: [enabled: boolean]; result: null }
   'port:create-pair': { args: []; result: null }
-  'port:send': { args: [side: 'left' | 'right'; text: string]; result: null }
+  'port:send': { args: [side: 'left' | 'right', text: string]; result: null }
   'browser:create': { args: []; result: null }
   'browser:navigate': { args: [url: string]; result: null }
   'browser:go': { args: [action: 'back' | 'forward' | 'reload']; result: null }

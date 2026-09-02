@@ -58,7 +58,16 @@ export function createMainWindow(): BrowserWindow {
 
   mainWindow.webContents.on('will-navigate', (event, url) => {
     const current = mainWindow?.webContents.getURL() ?? ''
-    if (url !== current && !url.startsWith('http://localhost')) {
+    let allowed = url === current
+    if (!allowed) {
+      try {
+        const parsed = new URL(url)
+        allowed = is.dev && (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')
+      } catch {
+        allowed = false
+      }
+    }
+    if (!allowed) {
       event.preventDefault()
       if (isAllowedExternalUrl(url)) shell.openExternal(url)
     }
