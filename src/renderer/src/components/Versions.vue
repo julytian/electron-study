@@ -1,7 +1,19 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { onMounted, reactive } from 'vue'
 
-const versions = reactive({ ...window.electron.process.versions })
+const versions = reactive({
+  electron: '',
+  chrome: '',
+  node: ''
+})
+
+onMounted(async () => {
+  const result = await window.api.invoke('app:get-info')
+  if (!result.ok) return
+  versions.electron = result.data.electron
+  versions.chrome = result.data.chrome
+  versions.node = result.data.node
+})
 </script>
 
 <template>

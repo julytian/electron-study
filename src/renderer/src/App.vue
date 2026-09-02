@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import Versions from './components/Versions.vue'
 
-const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
+const ipcHandle = (): void => {
+  void window.api.invoke('app:get-info')
+}
 </script>
 
 <template>

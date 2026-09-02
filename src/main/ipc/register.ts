@@ -1,1 +1,5 @@
-export function registerIpc(): void {}
+import { registerAppIpc } from './app'
+
+export function registerIpc(): void {
+  registerAppIpc()
+}
