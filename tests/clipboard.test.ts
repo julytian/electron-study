@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mkdtempSync, readFileSync, existsSync } from 'node:fs'
+import { mkdtempSync, readFileSync, existsSync, unlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import Database from 'better-sqlite3'
@@ -34,11 +34,17 @@ function stubClipboard(initial?: {
   text?: string
   html?: string
   image?: NativeImageLike
-}): SystemClipboard & { text: string; html: string; image: NativeImageLike } {
+}): SystemClipboard & {
+  text: string
+  html: string
+  image: NativeImageLike
+  writtenImage: Buffer | null
+} {
   const state = {
     text: initial?.text ?? '',
     html: initial?.html ?? '',
-    image: initial?.image ?? emptyImage()
+    image: initial?.image ?? emptyImage(),
+    writtenImage: null as Buffer | null
   }
   return {
     get text() {
@@ -50,6 +56,9 @@ function stubClipboard(initial?: {
     get image() {
       return state.image
     },
+    get writtenImage() {
+      return state.writtenImage
+    },
     readText: () => state.text,
     readHTML: () => state.html,
     readImage: () => state.image,
@@ -58,7 +67,21 @@ function stubClipboard(initial?: {
     },
     writeHTML: (html: string) => {
       state.html = html
+    },
+    writeImage: (png: Buffer) => {
+      state.writtenImage = png
+      state.image = pngImage(png)
     }
+  }
+}
+
+function expectNamedError(fn: () => void, name: string): void {
+  expect(fn).toThrowError(new RegExp(name))
+  try {
+    fn()
+  } catch (error) {
+    expect(error).toMatchObject({ name })
+    expect((error as Error).message).toContain(name)
   }
 }
 
@@ -131,6 +154,117 @@ describe('clipboard service', () => {
     expect(service.history().map((item) => item.text)).toEqual(['second', 'first'])
 
     service.clearHistory()
+    expect(service.history()).toEqual([])
+  })
+
+  it('restores text to the system clipboard without inserting a new history row', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'elab-clip-'))
+    const clipboard = stubClipboard()
+    const service = createClipboardService(memoryDb(), clipboard, dir)
+    const item = service.write({ kind: 'text', text: 'restore-me' })
+    clipboard.writeText('changed')
+
+    service.restore(item.id)
+
+    expect(clipboard.text).toBe('restore-me')
+    expect(service.history()).toHaveLength(1)
+  })
+
+  it('restores html and text without inserting a new history row', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'elab-clip-'))
+    const clipboard = stubClipboard()
+    const service = createClipboardService(memoryDb(), clipboard, dir)
+    const item = service.write({ kind: 'html', html: '<i>x</i>', text: 'x' })
+    clipboard.writeHTML('')
+    clipboard.writeText('')
+
+    service.restore(item.id)
+
+    expect(clipboard.html).toBe('<i>x</i>')
+    expect(clipboard.text).toBe('x')
+    expect(service.history()).toHaveLength(1)
+  })
+
+  it('restores an image by writing the same png bytes without inserting a new history row', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'elab-clip-'))
+    const png = Buffer.from('fake-png-restore')
+    const clipboard = stubClipboard({ image: pngImage(png) })
+    const service = createClipboardService(memoryDb(), clipboard, dir)
+    service.read()
+    const item = service.history()[0]
+    clipboard.writeImage(Buffer.from('other'))
+
+    service.restore(item!.id)
+
+    expect(clipboard.writtenImage).toEqual(png)
+    expect(clipboard.image.toPNG()).toEqual(png)
+    expect(service.history()).toHaveLength(1)
+  })
+
+  it('restore of a missing id throws E_NOT_FOUND', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'elab-clip-'))
+    const service = createClipboardService(memoryDb(), stubClipboard(), dir)
+
+    expectNamedError(() => service.restore(999), 'E_NOT_FOUND')
+  })
+
+  it('restore of an image_path outside clipboardDir throws E_PATH', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'elab-clip-'))
+    const db = memoryDb()
+    const service = createClipboardService(db, stubClipboard(), dir)
+    const outside = '/tmp/elab-outside-xxx.png'
+    db.prepare(
+      'INSERT INTO clipboard_items (kind, text, html, image_path, created_at) VALUES (?, ?, ?, ?, ?)'
+    ).run('image', null, null, outside, Date.now())
+    const row = db.prepare('SELECT id FROM clipboard_items WHERE image_path = ?').get(outside) as {
+      id: number
+    }
+
+    expectNamedError(() => service.restore(row.id), 'E_PATH')
+  })
+
+  it('deletes a text row and leaves history empty', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'elab-clip-'))
+    const service = createClipboardService(memoryDb(), stubClipboard(), dir)
+    const item = service.write({ kind: 'text', text: 'drop-me' })
+
+    service.delete(item.id)
+
+    expect(service.history()).toEqual([])
+  })
+
+  it('deletes an image row and its file, then throws E_NOT_FOUND for the same id', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'elab-clip-'))
+    const png = Buffer.from('fake-png-delete')
+    const service = createClipboardService(
+      memoryDb(),
+      stubClipboard({ image: pngImage(png) }),
+      dir
+    )
+    service.read()
+    const item = service.history()[0]
+    const imagePath = item!.imagePath ?? ''
+
+    service.delete(item!.id)
+
+    expect(existsSync(imagePath)).toBe(false)
+    expect(service.history()).toEqual([])
+    expectNamedError(() => service.delete(item!.id), 'E_NOT_FOUND')
+  })
+
+  it('deletes an image row after the file is already gone without throwing', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'elab-clip-'))
+    const png = Buffer.from('fake-png-gone')
+    const service = createClipboardService(
+      memoryDb(),
+      stubClipboard({ image: pngImage(png) }),
+      dir
+    )
+    service.read()
+    const item = service.history()[0]
+    unlinkSync(item!.imagePath ?? '')
+
+    expect(() => service.delete(item!.id)).not.toThrow()
     expect(service.history()).toEqual([])
   })
 })
