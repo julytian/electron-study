@@ -36,7 +36,11 @@ export function useNotes(): UseNotes {
   async function confirmProceed(): Promise<boolean> {
     return runUnsavedGuard({
       dirty: app.notesDirty,
-      ask: () => askUnsaved(),
+      ask: async () => {
+        const choice = await askUnsaved()
+        if (choice === 'discard') app.notesDirty = false
+        return choice
+      },
       save: async () => {
         if (!current.value) return true
         await save()
