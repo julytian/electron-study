@@ -1,3 +1,6 @@
+export const LIST_PROCESS_EVENTS_SQL =
+  "SELECT * FROM lab_events WHERE module = 'process' ORDER BY created_at DESC LIMIT ?"
+
 export interface LabEventRowLike {
   module: string
   action: string

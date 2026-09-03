@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { formatRecentProcessEvents, type LabEventRowLike } from '../src/shared/lab-event-format'
+import {
+  formatRecentProcessEvents,
+  LIST_PROCESS_EVENTS_SQL,
+  type LabEventRowLike
+} from '../src/shared/lab-event-format'
 
 function row(
   partial: Partial<LabEventRowLike> & Pick<LabEventRowLike, 'module' | 'action'>
@@ -11,6 +15,14 @@ function row(
     ...partial
   }
 }
+
+describe('LIST_PROCESS_EVENTS_SQL', () => {
+  it('filters process rows in SQL and applies LIMIT', () => {
+    expect(LIST_PROCESS_EVENTS_SQL).toContain("module = 'process'")
+    expect(LIST_PROCESS_EVENTS_SQL).toContain('LIMIT ?')
+    expect(LIST_PROCESS_EVENTS_SQL).not.toContain('SELECT * FROM lab_events ORDER BY')
+  })
+})
 
 describe('formatRecentProcessEvents', () => {
   it('returns the empty copy when there are no process rows', () => {
