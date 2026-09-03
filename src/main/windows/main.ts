@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { is } from '@electron-toolkit/utils'
 import { getSettings, patchSettings } from '../services/conf'
 import { isAllowedExternalUrl } from '../../shared/external-url'
+import { closeAllChildren } from './child'
 import { isSameRendererDocument, shouldHideToTray, withHash } from './window-policy'
 
 let mainWindow: BrowserWindow | null = null
@@ -114,6 +115,7 @@ export function createMainWindow(hash?: string): BrowserWindow {
   })
 
   mainWindow.on('closed', () => {
+    closeAllChildren()
     mainWindow = null
   })
 

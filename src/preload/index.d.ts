@@ -6,6 +6,7 @@ declare global {
       invoke: InvokeFn
       on: OnFn
     }
+    __labPort?: MessagePort
   }
 }
 

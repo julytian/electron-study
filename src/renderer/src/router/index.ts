@@ -8,6 +8,10 @@ import NotesView from '../views/NotesView.vue'
 import ClipboardView from '../views/ClipboardView.vue'
 import FilesView from '../views/FilesView.vue'
 import SystemView from '../views/SystemView.vue'
+import WindowLabView from '../views/WindowLabView.vue'
+import WindowChromeView from '../views/WindowChromeView.vue'
+import WindowPortsView from '../views/WindowPortsView.vue'
+import PortChildView from '../views/PortChildView.vue'
 
 const children = routeGroups.flatMap((group) =>
   group.items.map((item) => {
@@ -29,6 +33,15 @@ const children = routeGroups.flatMap((group) =>
     if (item.path === '/workbench/system') {
       return { path: item.path, component: SystemView }
     }
+    if (item.path === '/windows/lab') {
+      return { path: item.path, component: WindowLabView }
+    }
+    if (item.path === '/windows/chrome') {
+      return { path: item.path, component: WindowChromeView }
+    }
+    if (item.path === '/windows/ports') {
+      return { path: item.path, component: WindowPortsView }
+    }
     return { path: item.path, component: PlaceholderView }
   })
 )
@@ -42,6 +55,8 @@ export const router = createRouter({
       redirect: '/workbench/notes',
       children
     },
+    { path: '/ports/left', component: PortChildView },
+    { path: '/ports/right', component: PortChildView },
     { path: '/:pathMatch(.*)*', redirect: '/workbench/notes' }
   ]
 })
