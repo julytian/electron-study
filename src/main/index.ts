@@ -13,6 +13,7 @@ import { registerIpc } from './ipc/register'
 import { isDefaultSessionPermissionAllowed } from './services/session-permissions'
 import { refreshDockMenu } from './platforms/mac'
 import { refreshWindowsJumpList } from './platforms/win'
+import { purgeMissingRecentFiles, rebuildSystemRecentDocuments } from './services/recent-documents'
 import {
   extractFileFromArgv,
   extractUrlFromArgv,
@@ -85,6 +86,9 @@ app.whenReady().then(() => {
     app.quit()
     return
   }
+
+  purgeMissingRecentFiles()
+  rebuildSystemRecentDocuments()
 
   registerIpc()
   registerProtocol()

@@ -22,8 +22,9 @@ export function refreshWindowsJumpList(): { message: string } {
     throw platformError('E_PLATFORM: Jump List 仅支持 Windows')
   }
 
-  const paths = existingRecentPaths(queryRecentFileRows(), existsSync)
+  const paths = existingRecentPaths(queryRecentFileRows(), existsSync, 15)
   app.setJumpList([
+    { type: 'recent' },
     {
       type: 'custom',
       name: '最近文件',
