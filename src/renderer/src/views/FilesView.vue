@@ -36,7 +36,7 @@ function formatOpenedAt(openedAt: number): string {
       <a-button :disabled="!hasPath" draggable="true" @dragstart="startDrag">拖出到桌面</a-button>
     </a-space>
     <a-card title="最近文件">
-      <a-list :data-source="recents" :locale="{ emptyText: '还没有最近文件' }">
+      <a-list :data-source="recents" item-key="id" :locale="{ emptyText: '还没有最近文件' }">
         <template #renderItem="{ item }">
           <a-list-item>
             <a-list-item-meta :title="item.path" :description="formatOpenedAt(item.openedAt)" />

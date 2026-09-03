@@ -63,6 +63,7 @@ export function useFiles(): UseFiles {
     path.value = null
     content.value = ''
     contentLoaded.value = false
+    await refreshRecents()
   }
 
   async function startDrag(event: DragEvent): Promise<void> {
@@ -72,16 +73,19 @@ export function useFiles(): UseFiles {
   }
 
   async function openRecent(target: string): Promise<void> {
-    const result = await invokeIpc('files:open-recent', target)
-    path.value = result.path
-    if (result.content !== undefined) {
-      content.value = result.content
-      contentLoaded.value = true
-    } else {
-      content.value = ''
-      contentLoaded.value = false
+    try {
+      const result = await invokeIpc('files:open-recent', target)
+      path.value = result.path
+      if (result.content !== undefined) {
+        content.value = result.content
+        contentLoaded.value = true
+      } else {
+        content.value = ''
+        contentLoaded.value = false
+      }
+    } finally {
+      await refreshRecents()
     }
-    await refreshRecents()
   }
 
   async function forget(target?: string): Promise<void> {

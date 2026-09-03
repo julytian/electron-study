@@ -88,13 +88,6 @@ export function createFilesService(
   function assertAllowed(target: string): string {
     const resolved = resolve(target)
     if (allowlist.has(resolved)) return resolved
-    const inRecent = Boolean(
-      db.prepare('SELECT id FROM recent_files WHERE path = ?').get(resolved)
-    )
-    if (inRecent) {
-      allowlist.add(resolved)
-      return resolved
-    }
     try {
       return assertWithinRoot(resolved, userData)
     } catch {
@@ -118,6 +111,18 @@ export function createFilesService(
       return { path: filePath }
     },
     showInFolder(target: string) {
+      const resolved = resolve(target)
+      if (allowlist.has(resolved)) {
+        fileShell.showItemInFolder(resolved)
+        return
+      }
+      const inRecent = Boolean(
+        db.prepare('SELECT id FROM recent_files WHERE path = ?').get(resolved)
+      )
+      if (inRecent) {
+        fileShell.showItemInFolder(resolved)
+        return
+      }
       fileShell.showItemInFolder(assertAllowed(target))
     },
     async trash(target: string) {

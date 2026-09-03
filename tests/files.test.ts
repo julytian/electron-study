@@ -159,7 +159,7 @@ describe('files service', () => {
     expect(recentPaths(db)).toEqual([resolve(outsider)])
   })
 
-  it('allows recent_files paths that were not opened this session and are outside userData', () => {
+  it('shows a recent_files path outside userData that was not opened this session', () => {
     const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
     const outsider = join(tmpdir(), `elab-recent-table-${Date.now()}.txt`)
     writeFileSync(outsider, 'from recent table')
@@ -168,9 +168,34 @@ describe('files service', () => {
     const shell = stubShell()
     const service = createFilesService(db, userData, stubDialogs({}), shell)
 
-    expect(service.assertAllowed(outsider)).toBe(resolved)
     service.showInFolder(outsider)
+
     expect(shell.shown).toEqual([resolved])
+    expect(() => service.assertAllowed(outsider)).toThrowError(/E_PATH/)
+  })
+
+  it('does not let recent_files grant trash or addRecent for an outsider', async () => {
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const outsider = join(tmpdir(), `elab-recent-deny-${Date.now()}.txt`)
+    writeFileSync(outsider, 'from recent table')
+    const db = memoryDb()
+    rememberOpened(db, outsider)
+    const service = createFilesService(db, userData, stubDialogs({}), stubShell())
+
+    await expect(service.trash(outsider)).rejects.toThrowError(/E_PATH/)
+    expect(() => service.addRecent(outsider)).toThrowError(/E_PATH/)
+  })
+
+  it('does not let rememberOpened outsider addRecent or trash via a fresh service', async () => {
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const outsider = join(tmpdir(), `elab-os-fresh-${Date.now()}.md`)
+    writeFileSync(outsider, '# hello')
+    const db = memoryDb()
+    rememberOpened(db, outsider)
+    const fresh = createFilesService(db, userData, stubDialogs({}), stubShell())
+
+    expect(() => fresh.addRecent(outsider)).toThrowError(/E_PATH/)
+    await expect(fresh.trash(outsider)).rejects.toThrowError(/E_PATH/)
   })
 
   it('adds allowlisted or userData paths to recent_files', async () => {
