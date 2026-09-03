@@ -1,4 +1,5 @@
-import { app, BrowserWindow, crashReporter, session } from 'electron'
+import { app, BrowserWindow, crashReporter, Menu, session, shell } from 'electron'
+import { buildPackagedMenuTemplate } from './windows/app-menu'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { setupLogger } from './services/logger'
 import { ensureAppDirs } from './services/paths'
@@ -75,6 +76,37 @@ app.whenReady().then(() => {
     packaged: app.isPackaged,
     isDev: is.dev
   })
+
+  function applyApplicationMenu(packaged: boolean): void {
+    if (!packaged) return
+
+    const template = buildPackagedMenuTemplate().map((item) => {
+      if (item.label === '帮助' && item.submenu) {
+        return {
+          ...item,
+          submenu: item.submenu.map((subItem) => {
+            if (subItem.label === '打开仓库') {
+              return {
+                ...subItem,
+                click: () => {
+                  void shell.openExternal('https://github.com/julytian/electron-study')
+                }
+              }
+            }
+            return subItem
+          })
+        }
+      }
+      return item
+    })
+
+    Menu.setApplicationMenu(
+      Menu.buildFromTemplate(template as Electron.MenuItemConstructorOptions[])
+    )
+  }
+
+  applyApplicationMenu(app.isPackaged)
+
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
