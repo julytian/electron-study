@@ -8,6 +8,8 @@ import { registerShortcuts } from './services/shortcuts'
 import { watchBrowserRoute } from './ipc/browser'
 import { createMainWindow, getMainWindow, setAppQuitting } from './windows/main'
 import { registerIpc } from './ipc/register'
+import { refreshDockMenu } from './platforms/mac'
+import { refreshWindowsJumpList } from './platforms/win'
 import {
   extractFileFromArgv,
   extractUrlFromArgv,
@@ -71,6 +73,12 @@ app.whenReady().then(() => {
   registerIpc()
   registerProtocol()
   watchBrowserRoute(createMainWindow())
+  try {
+    if (process.platform === 'win32') refreshWindowsJumpList()
+    if (process.platform === 'darwin') refreshDockMenu()
+  } catch (error) {
+    log.error(error)
+  }
   flushPendingOpenFiles()
   handleIncomingArgv(process.argv)
   flushDeepLinkQueue()

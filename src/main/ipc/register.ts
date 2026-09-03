@@ -3,6 +3,7 @@ import { registerBrowserIpc } from './browser'
 import { registerClipboardIpc } from './clipboard'
 import { registerDownloadsIpc } from './downloads'
 import { registerFilesIpc } from './files'
+import { registerLabIpc } from './lab'
 import { registerNotesIpc } from './notes'
 import { registerProtocolIpc } from './protocol'
 import { registerSystemIpc } from './system'
@@ -18,4 +19,5 @@ export function registerIpc(): void {
   registerWindowsIpc()
   registerBrowserIpc()
   registerProtocolIpc()
+  registerLabIpc()
 }

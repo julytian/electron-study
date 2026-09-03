@@ -17,6 +17,7 @@ import DownloadsView from '../views/DownloadsView.vue'
 import PrintView from '../views/PrintView.vue'
 import CaptureView from '../views/CaptureView.vue'
 import NetworkLabView from '../views/lab/NetworkLabView.vue'
+import PlatformLabView from '../views/lab/PlatformLabView.vue'
 import ProtocolLabView from '../views/lab/ProtocolLabView.vue'
 
 const children = routeGroups.flatMap((group) =>
@@ -65,6 +66,9 @@ const children = routeGroups.flatMap((group) =>
     }
     if (item.path === '/lab/protocol') {
       return { path: item.path, component: ProtocolLabView }
+    }
+    if (item.path === '/lab/platform') {
+      return { path: item.path, component: PlatformLabView }
     }
     return { path: item.path, component: PlaceholderView }
   })
