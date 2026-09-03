@@ -50,8 +50,9 @@ export function parseGitHubRepository(
 
 export function statusForProgress(
   current: UpdaterStatus,
-  _autoDownload: boolean
+  autoDownload: boolean
 ): UpdaterStatus {
+  void autoDownload
   if (current === 'downloaded') return 'downloaded'
   return 'downloading'
 }

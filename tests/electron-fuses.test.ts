@@ -6,7 +6,7 @@ import { ELECTRON_FUSES } from '../src/shared/electron-fuses'
 describe('ELECTRON_FUSES', () => {
   it('matches the electron-builder.yml electronFuses block', () => {
     const yml = readFileSync(resolve(__dirname, '../electron-builder.yml'), 'utf8')
-    const block = yml.match(/electronFuses:\n((?:  .+\n)+)/)?.[1] ?? ''
+    const block = yml.match(/electronFuses:\n((?: {2}.+\n)+)/)?.[1] ?? ''
     expect(block).toBeTruthy()
     const keys = Object.keys(ELECTRON_FUSES)
     expect(keys).toHaveLength(8)

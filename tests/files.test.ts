@@ -150,7 +150,6 @@ describe('files service', () => {
   })
 
   it('remembers OS-opened paths without the userData jail', () => {
-    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
     const outsider = join(tmpdir(), `elab-os-open-${Date.now()}.md`)
     writeFileSync(outsider, '# hello')
     const db = memoryDb()

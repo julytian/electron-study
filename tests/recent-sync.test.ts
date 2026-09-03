@@ -47,7 +47,7 @@ describe('collapseDuplicateRecentRows', () => {
 
 describe('filterExistingPaths', () => {
   it('drops missing files', () => {
-    const exists = (p: string) => p === '/keep.md'
+    const exists = (p: string): boolean => p === '/keep.md'
     expect(filterExistingPaths(['/keep.md', '/gone.md'], exists)).toEqual(['/keep.md'])
   })
 })
@@ -58,7 +58,7 @@ describe('pathsForSystemRecent', () => {
       path: `/f${i}.md`,
       openedAt: i
     }))
-    const exists = () => true
+    const exists = (): boolean => true
     const paths = pathsForSystemRecent(rows, exists)
     expect(paths).toHaveLength(RECENT_FILE_LIMIT)
     expect(paths[0]).toBe('/f19.md')
@@ -74,7 +74,7 @@ describe('pathsForAddRecentDocument', () => {
       { path: '/mid.md', openedAt: 2 },
       { path: '/gone.md', openedAt: 4 }
     ]
-    const exists = (p: string) => p !== '/gone.md'
+    const exists = (p: string): boolean => p !== '/gone.md'
     expect(pathsForAddRecentDocument(rows, exists)).toEqual(['/old.md', '/mid.md', '/new.md'])
   })
 })
