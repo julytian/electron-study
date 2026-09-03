@@ -8,16 +8,43 @@ export const useAppStore = defineStore('app', () => {
   const info = ref<AppInfo | null>(null)
   const settings = ref<AppSettings>(defaultSettings)
   const updaterStatus = ref<UpdaterStatus>('idle')
+  const updaterVersion = ref<string | undefined>()
+  const updaterProgress = ref(0)
+  const notesDirty = ref(false)
+
+  let subscribed = false
+
+  function subscribeUpdater(): void {
+    if (subscribed) return
+    subscribed = true
+    window.api.on('updater:status', (payload) => {
+      updaterStatus.value = payload.status
+      if (payload.version !== undefined) updaterVersion.value = payload.version
+    })
+    window.api.on('updater:progress', (payload) => {
+      updaterProgress.value = payload.percent
+    })
+  }
 
   async function bootstrap(): Promise<void> {
     info.value = await invokeIpc('app:get-info')
     settings.value = await invokeIpc('conf:get')
     updaterStatus.value = info.value.updaterStatus
+    subscribeUpdater()
   }
 
   async function saveSettings(patch: Partial<AppSettings>): Promise<void> {
     settings.value = await invokeIpc('conf:set', patch)
   }
 
-  return { info, settings, updaterStatus, bootstrap, saveSettings }
+  return {
+    info,
+    settings,
+    updaterStatus,
+    updaterVersion,
+    updaterProgress,
+    notesDirty,
+    bootstrap,
+    saveSettings
+  }
 })

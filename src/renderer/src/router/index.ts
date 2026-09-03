@@ -19,6 +19,7 @@ import CaptureView from '../views/CaptureView.vue'
 import NetworkLabView from '../views/lab/NetworkLabView.vue'
 import PlatformLabView from '../views/lab/PlatformLabView.vue'
 import ProtocolLabView from '../views/lab/ProtocolLabView.vue'
+import AdvancedLabView from '../views/lab/AdvancedLabView.vue'
 
 const children = routeGroups.flatMap((group) =>
   group.items.map((item) => {
@@ -69,6 +70,9 @@ const children = routeGroups.flatMap((group) =>
     }
     if (item.path === '/lab/platform') {
       return { path: item.path, component: PlatformLabView }
+    }
+    if (item.path === '/lab/advanced') {
+      return { path: item.path, component: AdvancedLabView }
     }
     return { path: item.path, component: PlaceholderView }
   })

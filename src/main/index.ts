@@ -3,6 +3,8 @@ import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { setupLogger } from './services/logger'
 import { ensureAppDirs } from './services/paths'
 import { openDatabase, closeDatabase } from './services/db'
+import { getSettings } from './services/conf'
+import { checkUpdates } from './services/updater'
 import { createTray, destroyTray } from './services/tray'
 import { registerShortcuts } from './services/shortcuts'
 import { watchBrowserRoute } from './ipc/browser'
@@ -84,6 +86,12 @@ app.whenReady().then(() => {
   flushDeepLinkQueue()
   createTray()
   registerShortcuts()
+
+  if (app.isPackaged && getSettings().updater.autoCheck) {
+    setTimeout(() => {
+      checkUpdates()
+    }, 10_000)
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

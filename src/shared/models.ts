@@ -105,4 +105,5 @@ export interface AppInfo {
   userData: string
   dbReady: boolean
   updaterStatus: UpdaterStatus
+  hasRepository: boolean
 }

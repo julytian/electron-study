@@ -17,6 +17,18 @@ async function onCloseToTray(checked: boolean): Promise<void> {
   })
 }
 
+async function onAutoCheck(checked: boolean): Promise<void> {
+  await store.saveSettings({
+    updater: { ...store.settings.updater, autoCheck: checked }
+  })
+}
+
+async function onAutoDownload(checked: boolean): Promise<void> {
+  await store.saveSettings({
+    updater: { ...store.settings.updater, autoDownload: checked }
+  })
+}
+
 async function exportDb(): Promise<void> {
   await invokeIpc('db:export')
 }
@@ -50,6 +62,16 @@ async function clearDb(): Promise<void> {
         </a-form-item>
         <a-form-item label="关闭到托盘">
           <a-switch :checked="store.settings.behavior.closeToTray" @change="onCloseToTray" />
+        </a-form-item>
+      </a-form>
+    </a-card>
+    <a-card title="更新">
+      <a-form layout="vertical">
+        <a-form-item label="启动后自动检查">
+          <a-switch :checked="store.settings.updater.autoCheck" @change="onAutoCheck" />
+        </a-form-item>
+        <a-form-item label="发现更新后自动下载">
+          <a-switch :checked="store.settings.updater.autoDownload" @change="onAutoDownload" />
         </a-form-item>
       </a-form>
     </a-card>

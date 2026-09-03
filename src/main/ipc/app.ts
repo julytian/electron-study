@@ -5,6 +5,7 @@ import { errorCodes, ipcError, ipcOk } from '../../shared/ipc-result'
 import { isAllowedExternalUrl } from '../../shared/external-url'
 import type { AppInfo } from '../../shared/models'
 import { getSettings, patchSettings } from '../services/conf'
+import { getUpdaterMachine, readPackageRepository } from '../services/updater'
 import { clearBusinessTables, getDatabase } from '../services/db'
 import { assertWithinRoot } from '../services/path-jail'
 import { ensureAppDirs } from '../services/paths'
@@ -29,7 +30,8 @@ export function registerAppIpc(): void {
       isPackaged: app.isPackaged,
       userData,
       dbReady,
-      updaterStatus: 'idle'
+      updaterStatus: getUpdaterMachine().status,
+      hasRepository: readPackageRepository(app.getAppPath()) !== null
     }
     return ipcOk(data)
   })
