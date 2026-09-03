@@ -1,8 +1,24 @@
 <script setup lang="ts">
 import { useFiles } from '../composables/useFiles'
 
-const { path, content, contentLoaded, hasPath, open, save, showInFolder, trash, startDrag } =
-  useFiles()
+const {
+  path,
+  content,
+  contentLoaded,
+  hasPath,
+  recents,
+  open,
+  save,
+  showInFolder,
+  trash,
+  startDrag,
+  openRecent,
+  forget
+} = useFiles()
+
+function formatOpenedAt(openedAt: number): string {
+  return new Date(openedAt).toLocaleString()
+}
 </script>
 
 <template>
@@ -15,10 +31,24 @@ const { path, content, contentLoaded, hasPath, open, save, showInFolder, trash, 
     <a-space wrap>
       <a-button type="primary" @click="open">打开</a-button>
       <a-button @click="save">保存</a-button>
-      <a-button :disabled="!hasPath" @click="showInFolder">显示位置</a-button>
+      <a-button :disabled="!hasPath" @click="showInFolder()">显示位置</a-button>
       <a-button danger :disabled="!hasPath" @click="trash">移到回收站</a-button>
       <a-button :disabled="!hasPath" draggable="true" @dragstart="startDrag">拖出到桌面</a-button>
     </a-space>
+    <a-card title="最近文件">
+      <a-list :data-source="recents" :locale="{ emptyText: '还没有最近文件' }">
+        <template #renderItem="{ item }">
+          <a-list-item>
+            <a-list-item-meta :title="item.path" :description="formatOpenedAt(item.openedAt)" />
+            <template #actions>
+              <a-button size="small" @click="openRecent(item.path)">打开</a-button>
+              <a-button size="small" @click="showInFolder(item.path)">显示位置</a-button>
+              <a-button size="small" danger @click="forget(item.path)">移除</a-button>
+            </template>
+          </a-list-item>
+        </template>
+      </a-list>
+    </a-card>
     <a-descriptions bordered :column="1" size="small">
       <a-descriptions-item label="当前路径">
         {{ path || '尚未打开或保存文件' }}

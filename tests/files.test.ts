@@ -157,9 +157,20 @@ describe('files service', () => {
 
     expect(rememberOpened(db, outsider)).toBe(resolve(outsider))
     expect(recentPaths(db)).toEqual([resolve(outsider)])
-    expect(() =>
-      createFilesService(db, userData, stubDialogs({}), stubShell()).addRecent(outsider)
-    ).toThrowError(/E_PATH/)
+  })
+
+  it('allows recent_files paths that were not opened this session and are outside userData', () => {
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const outsider = join(tmpdir(), `elab-recent-table-${Date.now()}.txt`)
+    writeFileSync(outsider, 'from recent table')
+    const db = memoryDb()
+    const resolved = rememberOpened(db, outsider)
+    const shell = stubShell()
+    const service = createFilesService(db, userData, stubDialogs({}), shell)
+
+    expect(service.assertAllowed(outsider)).toBe(resolved)
+    service.showInFolder(outsider)
+    expect(shell.shown).toEqual([resolved])
   })
 
   it('adds allowlisted or userData paths to recent_files', async () => {
