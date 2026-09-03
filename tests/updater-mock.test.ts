@@ -81,9 +81,19 @@ describe('parseGitHubRepository', () => {
     });
   });
 
-  it('keeps mock when the app package.json has no repository', () => {
-    expect(readPackageRepository(resolve(__dirname, '..'))).toBeNull();
-  });
+  it('parses the public electron-study repository URL', () => {
+    expect(parseGitHubRepository('https://github.com/julytian/electron-study.git')).toEqual({
+      owner: 'julytian',
+      repo: 'electron-study'
+    })
+  })
+
+  it('reads the GitHub repository from the app package.json', () => {
+    expect(readPackageRepository(resolve(__dirname, '..'))).toEqual({
+      owner: 'julytian',
+      repo: 'electron-study'
+    })
+  })
 });
 
 describe('statusForProgress', () => {
