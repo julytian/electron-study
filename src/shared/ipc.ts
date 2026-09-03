@@ -7,6 +7,7 @@ import type {
   DownloadRecord,
   LabEvent,
   Note,
+  RecentFile,
   ThemeMode,
   UpdaterStatus
 } from './models'
@@ -36,6 +37,9 @@ export const invokeChannels = {
   'files:trash': true,
   'files:start-drag': true,
   'files:add-recent': true,
+  'files:recent': true,
+  'files:open-recent': true,
+  'files:forget': true,
   'capture:sources': true,
   'capture:save': true,
   'downloads:list': true,
@@ -109,6 +113,9 @@ export interface InvokeMap {
   'files:trash': { args: [target: string]; result: null }
   'files:start-drag': { args: [target: string]; result: null }
   'files:add-recent': { args: [target: string]; result: null }
+  'files:recent': { args: []; result: RecentFile[] }
+  'files:open-recent': { args: [target: string]; result: { path: string; content?: string } }
+  'files:forget': { args: [target?: string]; result: null }
   'capture:sources': {
     args: []
     result: Array<{ id: string; name: string; thumbnailDataUrl: string }>
