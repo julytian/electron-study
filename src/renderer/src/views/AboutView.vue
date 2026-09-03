@@ -89,6 +89,13 @@ async function install(): Promise<void> {
       </a-descriptions-item>
     </a-descriptions>
     <a-alert
+      style="margin-top: 16px"
+      type="info"
+      show-icon
+      message="发布与签名"
+      description="macOS 公证和 Windows 签名需要证书。本仓库 electron-builder 的 notarize 为 false，没有证书就不做签名或公证。"
+    />
+    <a-alert
       v-if="store.updaterStatus === 'error' && store.updaterMessage"
       style="margin-top: 16px"
       type="error"
