@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, shallowRef, watch } from 'vue'
-import { isNavigationFailure, useRouter } from 'vue-router'
+import { isNavigationFailure, NavigationFailureType, useRouter } from 'vue-router'
 import { routeGroups } from '@shared/routes'
 import type { RecentFile } from '@shared/models'
 import { invokeIpc } from '../composables/useIpc'
@@ -53,7 +53,9 @@ async function go(path: string): Promise<void> {
 async function goRecent(filePath: string): Promise<void> {
   open.value = false
   const nav = await router.push('/workbench/files')
-  if (isNavigationFailure(nav)) return
+  if (isNavigationFailure(nav, NavigationFailureType.aborted | NavigationFailureType.cancelled)) {
+    return
+  }
   sessionStorage.setItem(OPEN_RECENT_KEY, filePath)
   window.dispatchEvent(new CustomEvent(OPEN_RECENT_EVENT))
 }
