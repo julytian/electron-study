@@ -1,9 +1,10 @@
-import { BrowserWindow } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import { is } from '@electron-toolkit/utils'
 import { getSettings, patchSettings } from '../services/conf'
 import { closeAllChildren } from './child'
 import { attachRendererNavigation } from './navigation'
+import { attachWindowSecurity } from './window-security'
 import { shouldHideToTray, withHash } from './window-policy'
 
 let mainWindow: BrowserWindow | null = null
@@ -120,6 +121,7 @@ export function createMainWindow(hash?: string): BrowserWindow {
   })
 
   attachRendererNavigation(mainWindow)
+  attachWindowSecurity(mainWindow, app.isPackaged)
   loadMainWindow(mainWindow, hash)
 
   return mainWindow
