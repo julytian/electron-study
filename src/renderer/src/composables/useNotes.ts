@@ -1,7 +1,9 @@
 import { onMounted, ref, watch, type Ref } from 'vue'
 import type { Note } from '@shared/models'
+import { isDirtySnapshot, noteSnapshot, runUnsavedGuard } from '@shared/unsaved'
 import { invokeIpc } from './useIpc'
 import { useAppStore } from '../stores/app'
+import { askUnsaved } from './useUnsavedPrompt'
 
 interface UseNotes {
   notes: Ref<Note[]>
@@ -12,17 +14,7 @@ interface UseNotes {
   create: () => Promise<void>
   save: () => Promise<void>
   remove: (id: number) => Promise<void>
-}
-
-function noteSnapshot(note: Note | null): string | null {
-  if (!note) return null
-  return JSON.stringify({
-    id: note.id,
-    title: note.title,
-    body: note.body,
-    pinned: note.pinned,
-    isEncrypted: note.isEncrypted
-  })
+  confirmProceed: () => Promise<boolean>
 }
 
 export function useNotes(): UseNotes {
@@ -38,11 +30,19 @@ export function useNotes(): UseNotes {
   }
 
   function syncDirty(): void {
-    if (!current.value || cleanSnapshot === null) {
-      app.notesDirty = false
-      return
-    }
-    app.notesDirty = noteSnapshot(current.value) !== cleanSnapshot
+    app.notesDirty = isDirtySnapshot(noteSnapshot(current.value), cleanSnapshot)
+  }
+
+  async function confirmProceed(): Promise<boolean> {
+    return runUnsavedGuard({
+      dirty: app.notesDirty,
+      ask: () => askUnsaved(),
+      save: async () => {
+        if (!current.value) return true
+        await save()
+        return true
+      }
+    })
   }
 
   async function refresh(): Promise<void> {
@@ -50,11 +50,15 @@ export function useNotes(): UseNotes {
   }
 
   async function open(id: number): Promise<void> {
+    if (current.value?.id !== id) {
+      if (!(await confirmProceed())) return
+    }
     current.value = await invokeIpc('notes:get', id)
     markClean(current.value)
   }
 
   async function create(): Promise<void> {
+    if (!(await confirmProceed())) return
     const note = await invokeIpc('notes:create', { title: '未命名', body: '' })
     await refresh()
     current.value = note
@@ -102,5 +106,5 @@ export function useNotes(): UseNotes {
     void refresh()
   })
 
-  return { notes, current, keyword, refresh, open, create, save, remove }
+  return { notes, current, keyword, refresh, open, create, save, remove, confirmProceed }
 }
