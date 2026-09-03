@@ -14,4 +14,9 @@ describe('lab catalog', () => {
     const security = labModules.find((module) => module.path === '/lab/security')
     expect(security?.actions.map((action) => action.id)).toEqual(['app-info', 'security-status'])
   })
+
+  it('lists refresh and recent-gone on the metrics module', () => {
+    const metrics = labModules.find((module) => module.path === '/lab/metrics')
+    expect(metrics?.actions.map((action) => action.id)).toEqual(['refresh', 'recent-gone'])
+  })
 })

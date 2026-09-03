@@ -109,7 +109,10 @@ export const labModules: LabModule[] = [
     summary: '用 app.getAppMetrics() 列出当前 Electron 进程的 CPU 与内存。',
     tips: '完整表格在性能页。也可在此刷新一份摘要。',
     safety: '指标只读。不要在渲染进程猜测其它进程的 pid 去做系统操作。',
-    actions: [{ id: 'refresh', title: '刷新进程摘要' }]
+    actions: [
+      { id: 'refresh', title: '刷新进程摘要' },
+      { id: 'recent-gone', title: '查看最近进程事件' }
+    ]
   },
   {
     path: '/lab/advanced',
