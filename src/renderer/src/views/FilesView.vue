@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
+import { onBeforeRouteLeave } from 'vue-router'
 import { useFiles } from '../composables/useFiles'
 
 const OPEN_RECENT_KEY = 'electron-lab:open-recent'
@@ -9,6 +10,7 @@ const {
   path,
   content,
   contentLoaded,
+  dirty,
   hasPath,
   recents,
   open,
@@ -17,8 +19,13 @@ const {
   trash,
   startDrag,
   openRecent,
-  forget
+  forget,
+  confirmProceed
 } = useFiles()
+
+onBeforeRouteLeave(async (_to, _from, next) => {
+  next((await confirmProceed()) ? undefined : false)
+})
 
 async function consumePendingRecent(): Promise<void> {
   const pending = sessionStorage.getItem(OPEN_RECENT_KEY)
@@ -73,6 +80,7 @@ function formatOpenedAt(openedAt: number): string {
     <a-descriptions bordered :column="1" size="small">
       <a-descriptions-item label="当前路径">
         {{ path || '尚未打开或保存文件' }}
+        <a-tag v-if="dirty" color="orange">未保存</a-tag>
       </a-descriptions-item>
     </a-descriptions>
     <a-alert
