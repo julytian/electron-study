@@ -1,7 +1,7 @@
 # Electron Lab 设计说明
 
-日期：2026-09-03  
-状态：待实现  
+日期：2026-09-03
+状态：已实现
 仓库：`electron-study`
 
 ## 1. 背景与目标
@@ -31,7 +31,7 @@
 - **实验室**：同一 API 的拆解页，固定四块——能做什么 / 可点击演示 / 代码要点 / 安全注意。
 - 两边可互相跳转。当前操作系统没有的能力保留入口、禁用按钮并说明原因。
 
-底栏固定：平台、Electron 版本、更新状态、数据库是否就绪。  
+底栏固定：平台、Electron 版本、更新状态、数据库是否就绪。
 全局 `Cmd/Ctrl+K` 命令面板用于跳转模块。危险操作（清空库、注册协议）二次确认。
 
 ### 2.1 导航
@@ -72,16 +72,16 @@
 
 ## 3. 技术栈
 
-| 层 | 选择 |
-|---|---|
-| 运行时 | 最新稳定版 Electron |
-| 构建 | electron-vite（alex8088）+ electron-builder |
-| 渲染 | Vue 3 Composition API、`<script setup lang="ts">`、TypeScript、Vue Router、Pinia、ant-design-vue |
-| 工具库 | `@electron-toolkit/preload`、`@electron-toolkit/utils` |
-| 配置 | electron-conf |
-| 业务库 | better-sqlite3（仅主进程，WAL） |
-| 更新 | electron-updater，GitHub Releases + blockmap 增量 |
-| 包管理 | pnpm，Node.js 20.19+ 或 22.12+ |
+| 层     | 选择                                                                                             |
+| ------ | ------------------------------------------------------------------------------------------------ |
+| 运行时 | 最新稳定版 Electron                                                                              |
+| 构建   | electron-vite（alex8088）+ electron-builder                                                      |
+| 渲染   | Vue 3 Composition API、`<script setup lang="ts">`、TypeScript、Vue Router、Pinia、ant-design-vue |
+| 工具库 | `@electron-toolkit/preload`、`@electron-toolkit/utils`                                           |
+| 配置   | electron-conf                                                                                    |
+| 业务库 | better-sqlite3（仅主进程，WAL）                                                                  |
+| 更新   | electron-updater，GitHub Releases + blockmap 增量                                                |
+| 包管理 | pnpm，Node.js 20.19+ 或 22.12+                                                                   |
 
 安全默认值：`contextIsolation: true`、`sandbox: true`、`webSecurity: true`、`nodeIntegration: false`。生产启用 Electron Fuses（`runAsNode=false`、仅从 asar 加载等）。自定义协议使用 `protocol.handle`。
 
@@ -89,12 +89,12 @@
 
 ### 4.1 进程职责
 
-| 进程 | 允许 | 禁止 |
-|---|---|---|
-| 主进程 | 窗口、托盘、菜单、对话框、数据库、更新、协议、下载、打印、平台集成 | UI 状态、Ant Design 组件 |
-| preload | `contextBridge` 转发白名单 | 业务逻辑、读盘、直接查 SQL |
-| 渲染进程 | 页面、Pinia、交互 | `require('fs')`、裸 `ipcRenderer`、自行拼绝对路径访问磁盘 |
-| utilityProcess | 大文本导出、耗时统计、崩溃隔离演示 | 创建窗口、调用 `app` |
+| 进程           | 允许                                                               | 禁止                                                      |
+| -------------- | ------------------------------------------------------------------ | --------------------------------------------------------- |
+| 主进程         | 窗口、托盘、菜单、对话框、数据库、更新、协议、下载、打印、平台集成 | UI 状态、Ant Design 组件                                  |
+| preload        | `contextBridge` 转发白名单                                         | 业务逻辑、读盘、直接查 SQL                                |
+| 渲染进程       | 页面、Pinia、交互                                                  | `require('fs')`、裸 `ipcRenderer`、自行拼绝对路径访问磁盘 |
+| utilityProcess | 大文本导出、耗时统计、崩溃隔离演示                                 | 创建窗口、调用 `app`                                      |
 
 迷你浏览器使用独立 `session.fromPartition('persist:browser')`。`webRequest`、代理、证书处理只作用在该 Session，与主界面隔离。
 
@@ -178,10 +178,10 @@ src/
 
 ### 6.1 分层
 
-| 存储 | 路径 | 内容 |
-|---|---|---|
-| electron-conf | `userData/config.json` | 主题、托盘、开机自启、快捷键、窗口几何、更新偏好、上次路由 |
-| SQLite | `userData/app.db`（WAL） | 笔记、剪贴板历史、下载、最近文件、实验室日志 |
+| 存储          | 路径                     | 内容                                                       |
+| ------------- | ------------------------ | ---------------------------------------------------------- |
+| electron-conf | `userData/config.json`   | 主题、托盘、开机自启、快捷键、窗口几何、更新偏好、上次路由 |
+| SQLite        | `userData/app.db`（WAL） | 笔记、剪贴板历史、下载、最近文件、实验室日志               |
 
 仅主进程访问。开发态目录加 `-dev` 后缀。
 
@@ -294,14 +294,14 @@ IPC 统一形状：
 
 目录与路由一次铺齐，功能按垂直切片实现。
 
-| 期 | 交付 | 验收要点 |
-|---|---|---|
-| P0 骨架 | 脚手架、安全窗口、typed IPC、conf、SQLite migration、日志、单实例 | 壳能开，设置能存，库能建 |
-| P1 核心工具 | 笔记（含加密）、剪贴板、文件拖进拖出 | 系统读写 + 两层存储 |
-| P2 系统与窗口 | 系统能力、窗口实验室、现代外观、MessagePort | 托盘 / 通知 / 多窗 |
-| P3 浏览与网络 | 迷你浏览器、下载、打印 PDF、webRequest / 代理 / 证书 | Session 隔离 |
-| P4 系统集成 | 深链、文件关联、最近文档、Jump List / Dock / TouchBar | 从系统调起应用 |
-| P5 进阶 | 更新（GitHub + mock）、性能面板、utilityProcess、崩溃、实验室页补全 | 发布与诊断闭环 |
+| 期            | 交付                                                                | 验收要点                 |
+| ------------- | ------------------------------------------------------------------- | ------------------------ |
+| P0 骨架       | 脚手架、安全窗口、typed IPC、conf、SQLite migration、日志、单实例   | 壳能开，设置能存，库能建 |
+| P1 核心工具   | 笔记（含加密）、剪贴板、文件拖进拖出                                | 系统读写 + 两层存储      |
+| P2 系统与窗口 | 系统能力、窗口实验室、现代外观、MessagePort                         | 托盘 / 通知 / 多窗       |
+| P3 浏览与网络 | 迷你浏览器、下载、打印 PDF、webRequest / 代理 / 证书                | Session 隔离             |
+| P4 系统集成   | 深链、文件关联、最近文档、Jump List / Dock / TouchBar               | 从系统调起应用           |
+| P5 进阶       | 更新（GitHub + mock）、性能面板、utilityProcess、崩溃、实验室页补全 | 发布与诊断闭环           |
 
 每一期结束必须能 `pnpm dev` 运行且对应页面可操作，再开始下一期。
 
