@@ -27,3 +27,10 @@ export function pathsForSystemRecent(
     exists
   ).slice(0, RECENT_FILE_LIMIT)
 }
+
+export function pathsForAddRecentDocument(
+  rows: RecentRow[],
+  exists: (p: string) => boolean
+): string[] {
+  return pathsForSystemRecent(rows, exists).slice().reverse()
+}

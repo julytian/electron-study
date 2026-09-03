@@ -141,6 +141,7 @@ export function createFilesService(
         db.prepare('DELETE FROM recent_files WHERE path = ?').run(filePath)
         throw notFoundError('E_NOT_FOUND: Recent file is missing')
       }
+      insertRecent(filePath)
       allowlist.add(filePath)
       return readIfText(filePath)
     },

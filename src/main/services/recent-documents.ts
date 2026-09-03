@@ -1,7 +1,7 @@
 import { app } from 'electron'
 import { existsSync } from 'node:fs'
 import { getDatabase } from './db'
-import { pathsForSystemRecent, type RecentRow } from './recent-sync'
+import { pathsForAddRecentDocument, type RecentRow } from './recent-sync'
 import { refreshWindowsJumpList } from '../platforms/win'
 
 export function queryRecentRows(): RecentRow[] {
@@ -27,7 +27,7 @@ export function purgeMissingRecentFiles(): number {
 export function rebuildSystemRecentDocuments(): void {
   try {
     app.clearRecentDocuments()
-    for (const filePath of pathsForSystemRecent(queryRecentRows(), existsSync)) {
+    for (const filePath of pathsForAddRecentDocument(queryRecentRows(), existsSync)) {
       app.addRecentDocument(filePath)
     }
   } catch (error) {
@@ -39,8 +39,9 @@ export function rebuildSystemRecentDocuments(): void {
 export function rememberSystemDocument(filePath: string): void {
   try {
     app.addRecentDocument(filePath)
-  } catch {
-    // 忽略
+  } catch (error) {
+    // 部分平台 / 开发态可能不支持
+    console.warn(error)
   }
 }
 

@@ -99,17 +99,23 @@ export function registerFilesIpc(): void {
   )
   ipcMain.handle('files:recent', () => wrap(() => files().listRecent()))
   ipcMain.handle('files:open-recent', (_event, target: string) =>
-    wrap(() => {
-      const result = files().openRecent(target)
-      rememberSystemDocument(result.path)
-      if (process.platform === 'win32') {
-        try {
-          refreshWindowsJumpList()
-        } catch {
-          /* ignore */
+    wrap(async () => {
+      try {
+        const result = await files().openRecent(target)
+        rememberSystemDocument(result.path)
+        if (process.platform === 'win32') {
+          try {
+            refreshWindowsJumpList()
+          } catch {
+            /* ignore */
+          }
         }
+        return result
+      } catch (error) {
+        const name = error instanceof Error ? error.name : ''
+        if (name === 'E_NOT_FOUND') syncRecentMirrors()
+        throw error
       }
-      return result
     })
   )
   ipcMain.handle('files:forget', (_event, target?: string) =>

@@ -219,6 +219,26 @@ describe('files service', () => {
     })
   })
 
+  it('openRecent upserts opened_at so the file becomes newest', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const file = join(root, 'stale.txt')
+    writeFileSync(file, 'stale then reopen')
+    const db = memoryDb()
+    const resolved = resolve(file)
+    const service = createFilesService(db, userData, stubDialogs({ open: file }), stubShell())
+    await service.open()
+    db.prepare('UPDATE recent_files SET opened_at = ? WHERE path = ?').run(1000, resolved)
+
+    const result = service.openRecent(file)
+
+    expect(result).toEqual({ path: resolved, content: 'stale then reopen' })
+    const listed = service.listRecent()
+    expect(listed).toHaveLength(1)
+    expect(listed[0].path).toBe(resolved)
+    expect(listed[0].openedAt).toBeGreaterThan(1000)
+  })
+
   it('openRecent rejects a disk file that is not in recent_files and does not allowlist it', () => {
     const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
     const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))

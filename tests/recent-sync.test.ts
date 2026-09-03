@@ -3,6 +3,7 @@ import {
   RECENT_FILE_LIMIT,
   dedupeRecentRows,
   filterExistingPaths,
+  pathsForAddRecentDocument,
   pathsForSystemRecent
 } from '../src/main/services/recent-sync'
 
@@ -38,5 +39,18 @@ describe('pathsForSystemRecent', () => {
     expect(paths).toHaveLength(RECENT_FILE_LIMIT)
     expect(paths[0]).toBe('/f19.md')
     expect(paths[14]).toBe('/f5.md')
+  })
+})
+
+describe('pathsForAddRecentDocument', () => {
+  it('returns the same files as system recent, oldest first', () => {
+    const rows = [
+      { path: '/new.md', openedAt: 3 },
+      { path: '/old.md', openedAt: 1 },
+      { path: '/mid.md', openedAt: 2 },
+      { path: '/gone.md', openedAt: 4 }
+    ]
+    const exists = (p: string) => p !== '/gone.md'
+    expect(pathsForAddRecentDocument(rows, exists)).toEqual(['/old.md', '/mid.md', '/new.md'])
   })
 })
