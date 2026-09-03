@@ -31,6 +31,8 @@ export const invokeChannels = {
   'clipboard:write': true,
   'clipboard:history': true,
   'clipboard:clear-history': true,
+  'clipboard:restore': true,
+  'clipboard:delete': true,
   'files:open': true,
   'files:save': true,
   'files:show-in-folder': true,
@@ -107,6 +109,8 @@ export interface InvokeMap {
   }
   'clipboard:history': { args: []; result: ClipboardItem[] }
   'clipboard:clear-history': { args: []; result: null }
+  'clipboard:restore': { args: [id: number]; result: null }
+  'clipboard:delete': { args: [id: number]; result: null }
   'files:open': { args: []; result: { path: string; content?: string } | null }
   'files:save': { args: [content: string]; result: { path: string } | null }
   'files:show-in-folder': { args: [target: string]; result: null }
