@@ -3,7 +3,8 @@ import { resolve } from 'node:path';
 import {
   createUpdaterMachine,
   parseGitHubRepository,
-  readPackageRepository
+  readPackageRepository,
+  statusForProgress
 } from '../src/main/services/updater';
 
 describe('updater machine', () => {
@@ -82,5 +83,20 @@ describe('parseGitHubRepository', () => {
 
   it('keeps mock when the app package.json has no repository', () => {
     expect(readPackageRepository(resolve(__dirname, '..'))).toBeNull();
+  });
+});
+
+describe('statusForProgress', () => {
+  it('moves available to downloading when auto-download progress starts', () => {
+    expect(statusForProgress('available', true)).toBe('downloading');
+    expect(statusForProgress('available', false)).toBe('downloading');
+  });
+
+  it('stays downloading once progress is flowing', () => {
+    expect(statusForProgress('downloading', true)).toBe('downloading');
+  });
+
+  it('does not rewind a completed download', () => {
+    expect(statusForProgress('downloaded', true)).toBe('downloaded');
   });
 });

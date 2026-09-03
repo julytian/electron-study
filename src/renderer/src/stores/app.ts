@@ -10,6 +10,7 @@ export const useAppStore = defineStore('app', () => {
   const updaterStatus = ref<UpdaterStatus>('idle')
   const updaterVersion = ref<string | undefined>()
   const updaterProgress = ref(0)
+  const updaterMessage = ref<string | undefined>()
   const notesDirty = ref(false)
 
   let subscribed = false
@@ -20,6 +21,7 @@ export const useAppStore = defineStore('app', () => {
     window.api.on('updater:status', (payload) => {
       updaterStatus.value = payload.status
       if (payload.version !== undefined) updaterVersion.value = payload.version
+      updaterMessage.value = payload.message
     })
     window.api.on('updater:progress', (payload) => {
       updaterProgress.value = payload.percent
@@ -43,6 +45,7 @@ export const useAppStore = defineStore('app', () => {
     updaterStatus,
     updaterVersion,
     updaterProgress,
+    updaterMessage,
     notesDirty,
     bootstrap,
     saveSettings

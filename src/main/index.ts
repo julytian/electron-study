@@ -22,6 +22,8 @@ import {
   registerProtocol
 } from './services/protocol'
 
+let autoCheckTimer: ReturnType<typeof setTimeout> | undefined
+
 const gotLock = app.requestSingleInstanceLock()
 if (!gotLock) {
   app.quit()
@@ -88,7 +90,8 @@ app.whenReady().then(() => {
   registerShortcuts()
 
   if (app.isPackaged && getSettings().updater.autoCheck) {
-    setTimeout(() => {
+    autoCheckTimer = setTimeout(() => {
+      autoCheckTimer = undefined
       checkUpdates()
     }, 10_000)
   }
@@ -113,6 +116,10 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', () => {
+  if (autoCheckTimer !== undefined) {
+    clearTimeout(autoCheckTimer)
+    autoCheckTimer = undefined
+  }
   setAppQuitting()
   destroyTray()
   closeDatabase()

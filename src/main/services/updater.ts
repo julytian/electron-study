@@ -48,6 +48,14 @@ export function parseGitHubRepository(
   return null
 }
 
+export function statusForProgress(
+  current: UpdaterStatus,
+  _autoDownload: boolean
+): UpdaterStatus {
+  if (current === 'downloaded') return 'downloaded'
+  return 'downloading'
+}
+
 export function readPackageRepository(
   appPath: string
 ): { owner: string; repo: string } | null {

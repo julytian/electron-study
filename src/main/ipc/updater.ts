@@ -8,6 +8,7 @@ import {
   createUpdaterMachine,
   readPackageRepository,
   setUpdaterMachine,
+  statusForProgress,
   type UpdaterMachine,
   type UpdaterStatusPayload
 } from '../services/updater'
@@ -61,7 +62,8 @@ function wireAutoUpdater(machine: UpdaterMachine): void {
     machine.setStatus('checking')
   })
   autoUpdater.on('update-available', (info) => {
-    machine.setStatus('available', { version: info.version })
+    const autoDownload = getSettings().updater.autoDownload
+    machine.setStatus(autoDownload ? 'downloading' : 'available', { version: info.version })
   })
   autoUpdater.on('update-not-available', (info) => {
     machine.setStatus('not-available', { version: info.version })
@@ -73,6 +75,10 @@ function wireAutoUpdater(machine: UpdaterMachine): void {
     machine.setStatus('downloaded', { version: info.version })
   })
   autoUpdater.on('download-progress', (progress) => {
+    const next = statusForProgress(machine.status, getSettings().updater.autoDownload)
+    if (next !== machine.status) {
+      machine.setStatus(next)
+    }
     sendProgress(progress.percent)
   })
 }

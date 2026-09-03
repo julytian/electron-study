@@ -89,6 +89,13 @@ async function install(): Promise<void> {
       </a-descriptions-item>
     </a-descriptions>
     <a-alert
+      v-if="store.updaterStatus === 'error' && store.updaterMessage"
+      style="margin-top: 16px"
+      type="error"
+      show-icon
+      :message="store.updaterMessage"
+    />
+    <a-alert
       v-if="showMockHint"
       style="margin-top: 16px"
       type="info"
