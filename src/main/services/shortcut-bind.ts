@@ -4,6 +4,8 @@ export interface ShortcutMap {
   notes: string
 }
 
+export { isAcceleratorShape } from '../../shared/accelerator'
+
 export function collectFailedAccelerators(
   shortcuts: ShortcutMap,
   register: (accelerator: string) => boolean

@@ -7,6 +7,7 @@ import { showMainWindow, toggleMainWindow } from '../windows/main'
 let willQuitBound = false
 
 export function registerShortcuts(): string[] {
+  globalShortcut.unregisterAll()
   const { shortcuts } = getSettings()
   const actions: Record<string, () => void> = {
     [shortcuts.toggleWindow]: () => toggleMainWindow(),

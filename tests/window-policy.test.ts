@@ -77,9 +77,15 @@ describe('shouldHideToTray', () => {
     ).toBe(true)
   })
 
-  it('does not hide on macOS', () => {
+  it('hides on macOS even when close-to-tray is off', () => {
     expect(
-      shouldHideToTray({ closeToTray: true, platform: 'darwin', quitting: false })
+      shouldHideToTray({ closeToTray: false, platform: 'darwin', quitting: false })
+    ).toBe(true)
+  })
+
+  it('does not hide on macOS while quitting', () => {
+    expect(
+      shouldHideToTray({ closeToTray: false, platform: 'darwin', quitting: true })
     ).toBe(false)
   })
 

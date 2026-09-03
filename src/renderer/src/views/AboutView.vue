@@ -100,7 +100,7 @@ async function install(): Promise<void> {
       style="margin-top: 16px"
       type="info"
       show-icon
-      message="提示：开发态或不存在 repository 时不请求 GitHub，只用 mock。"
+      message="提示：开发态或 package.json 没有 repository 时不请求 GitHub，只用 mock。正式包且填写了 GitHub 仓库后走 Releases + blockmap。"
     />
     <a-space style="margin-top: 16px" wrap>
       <a-button :loading="checking" @click="check">检查更新</a-button>

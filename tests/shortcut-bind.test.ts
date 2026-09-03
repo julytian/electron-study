@@ -1,11 +1,24 @@
 import { describe, expect, it } from 'vitest'
-import { collectFailedAccelerators } from '../src/main/services/shortcut-bind'
+import { collectFailedAccelerators, isAcceleratorShape } from '../src/main/services/shortcut-bind'
 
 const shortcuts = {
   toggleWindow: 'CommandOrControl+Shift+L',
   clipboard: 'CommandOrControl+Shift+C',
   notes: 'CommandOrControl+Shift+N'
 }
+
+describe('isAcceleratorShape', () => {
+  it('accepts Electron-style accelerators', () => {
+    expect(isAcceleratorShape('CommandOrControl+Shift+L')).toBe(true)
+    expect(isAcceleratorShape('Alt+Space')).toBe(true)
+  })
+
+  it('rejects empty or plain words', () => {
+    expect(isAcceleratorShape('')).toBe(false)
+    expect(isAcceleratorShape('  ')).toBe(false)
+    expect(isAcceleratorShape('hello')).toBe(false)
+  })
+})
 
 describe('collectFailedAccelerators', () => {
   it('returns accelerators that fail to register', () => {

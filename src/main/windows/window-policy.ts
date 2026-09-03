@@ -34,5 +34,7 @@ export function shouldHideToTray(options: {
   platform: NodeJS.Platform
   quitting: boolean
 }): boolean {
-  return options.closeToTray && options.platform !== 'darwin' && !options.quitting
+  if (options.quitting) return false
+  if (options.platform === 'darwin') return true
+  return options.closeToTray
 }

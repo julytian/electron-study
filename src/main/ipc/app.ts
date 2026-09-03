@@ -3,8 +3,9 @@ import { copyFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { errorCodes, ipcError, ipcOk } from '../../shared/ipc-result'
 import { isAllowedExternalUrl } from '../../shared/external-url'
-import type { AppInfo } from '../../shared/models'
+import type { AppInfo, AppSettings } from '../../shared/models'
 import { getSettings, patchSettings } from '../services/conf'
+import { registerShortcuts } from '../services/shortcuts'
 import { getUpdaterMachine, readPackageRepository } from '../services/updater'
 import { clearBusinessTables, getDatabase } from '../services/db'
 import { assertWithinRoot } from '../services/path-jail'
@@ -37,7 +38,11 @@ export function registerAppIpc(): void {
   })
 
   ipcMain.handle('conf:get', () => ipcOk(getSettings()))
-  ipcMain.handle('conf:set', (_event, patch) => ipcOk(patchSettings(patch)))
+  ipcMain.handle('conf:set', (_event, patch: Partial<AppSettings>) => {
+    const next = patchSettings(patch)
+    if (patch.shortcuts) registerShortcuts()
+    return ipcOk(next)
+  })
 
   ipcMain.handle('db:status', () => {
     const { dbFile } = ensureAppDirs()

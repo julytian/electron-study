@@ -9,6 +9,10 @@ export interface RouteGroup {
   items: RouteItem[]
 }
 
+export function shouldPersistLastRoute(path: string): boolean {
+  return path.startsWith('/') && !path.startsWith('/ports/')
+}
+
 export const routeGroups: RouteGroup[] = [
   {
     key: 'workbench',
