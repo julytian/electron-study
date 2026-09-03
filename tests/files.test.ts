@@ -6,6 +6,7 @@ import Database from 'better-sqlite3'
 import { migrate } from '../src/main/services/db/migrations'
 import {
   createFilesService,
+  insertRecentFile,
   rememberOpened,
   type DialogLike,
   type FileShellLike
@@ -216,6 +217,37 @@ describe('files service', () => {
       path: resolve(file),
       content: 'from recent'
     })
+  })
+
+  it('openRecent rejects a disk file that is not in recent_files and does not allowlist it', () => {
+    const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const outsider = join(root, 'not-listed.txt')
+    writeFileSync(outsider, 'exists on disk')
+    const service = createFilesService(memoryDb(), userData, stubDialogs({}), stubShell())
+
+    expect(() => service.openRecent(outsider)).toThrowError(/E_NOT_FOUND/)
+    expect(() => service.assertAllowed(outsider)).toThrowError(/E_PATH/)
+    expect(() => service.showInFolder(outsider)).toThrowError(/E_PATH/)
+  })
+
+  it('insertRecentFile collapses duplicate rows for the same path', () => {
+    const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const file = join(root, 'dup.txt')
+    writeFileSync(file, 'dup')
+    const db = memoryDb()
+    const resolved = resolve(file)
+    db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run(resolved, 1)
+    db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run(resolved, 2)
+    expect(recentPaths(db)).toHaveLength(2)
+
+    insertRecentFile(db, resolved)
+
+    const listed = createFilesService(db, userData, stubDialogs({}), stubShell()).listRecent()
+    expect(listed).toHaveLength(1)
+    expect(listed[0].path).toBe(resolved)
+    expect(recentPaths(db)).toEqual([resolved])
   })
 
   it('forget(path) removes that path from listRecent', async () => {

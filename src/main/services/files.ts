@@ -14,6 +14,7 @@ export function insertRecentFile(db: Database.Database, filePath: string): void 
     | undefined
   if (existing) {
     db.prepare('UPDATE recent_files SET opened_at = ? WHERE id = ?').run(now, existing.id)
+    db.prepare('DELETE FROM recent_files WHERE path = ? AND id != ?').run(filePath, existing.id)
     return
   }
   db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run(filePath, now)
@@ -130,6 +131,12 @@ export function createFilesService(
     },
     openRecent(target: string) {
       const filePath = resolve(target)
+      const row = db.prepare('SELECT id FROM recent_files WHERE path = ?').get(filePath) as
+        | { id: number }
+        | undefined
+      if (!row) {
+        throw notFoundError('E_NOT_FOUND: Recent file is missing')
+      }
       if (!existsSync(filePath)) {
         db.prepare('DELETE FROM recent_files WHERE path = ?').run(filePath)
         throw notFoundError('E_NOT_FOUND: Recent file is missing')
