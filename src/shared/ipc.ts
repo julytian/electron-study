@@ -64,6 +64,7 @@ export const invokeChannels = {
   'browser:create': true,
   'browser:navigate': true,
   'browser:go': true,
+  'browser:find': true,
   'network:set-proxy': true,
   'network:set-filter': true,
   'network:set-insecure-certs': true,
@@ -148,6 +149,10 @@ export interface InvokeMap {
   'browser:create': { args: []; result: null }
   'browser:navigate': { args: [url: string]; result: null }
   'browser:go': { args: [action: 'back' | 'forward' | 'reload']; result: null }
+  'browser:find': {
+    args: [query: string, action: 'next' | 'previous' | 'stop']
+    result: { activeMatchOrdinal: number; matches: number }
+  }
   'network:set-proxy': { args: [rules: string]; result: null }
   'network:set-filter': { args: [enabled: boolean]; result: null }
   'network:set-insecure-certs': { args: [enabled: boolean]; result: null }
