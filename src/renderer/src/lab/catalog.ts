@@ -22,7 +22,10 @@ export const labModules: LabModule[] = [
     tips: '主进程管窗口、数据库和系统 API；preload 只做 contextBridge 转发；渲染进程只写界面。默认 sandbox、contextIsolation，nodeIntegration 关闭。',
     safety:
       '渲染进程里 typeof require === "undefined"。不要在页面里拼绝对路径读盘，也不要把整个 ipcRenderer 暴露出去。',
-    actions: [{ id: 'app-info', title: '查看应用与沙箱信息' }]
+    actions: [
+      { id: 'app-info', title: '查看应用与沙箱信息' },
+      { id: 'security-status', title: '查看安全状态' }
+    ]
   },
   {
     path: '/lab/window',
