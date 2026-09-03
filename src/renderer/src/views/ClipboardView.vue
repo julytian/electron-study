@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { imageCaption, itemDisplayText, useClipboard } from '../composables/useClipboard'
 
-const { items, draft, readSystem, writeText, clearHistory } = useClipboard()
+const { items, draft, readSystem, writeText, clearHistory, restore, remove } = useClipboard()
 </script>
 
 <template>
@@ -15,16 +15,28 @@ const { items, draft, readSystem, writeText, clearHistory } = useClipboard()
     <a-list :data-source="items" :locale="{ emptyText: '还没有剪贴板记录' }">
       <template #renderItem="{ item }">
         <a-list-item>
+          <template #actions>
+            <a-button type="link" danger @click.stop="remove(item.id)">删除</a-button>
+          </template>
           <a-list-item-meta>
             <template #title>
-              <a-tag>{{ item.kind }}</a-tag>
-              <span v-if="item.kind === 'image'">{{ imageCaption(item.imagePath) }}</span>
+              <div class="clipboard-restore" @click="restore(item.id)">
+                <a-tag>{{ item.kind }}</a-tag>
+                <span v-if="item.kind === 'image'">{{ imageCaption(item.imagePath) }}</span>
+              </div>
             </template>
             <template #description>
-              <pre v-if="itemDisplayText(item)" class="clipboard-text">{{
-                itemDisplayText(item)
-              }}</pre>
-              <span v-else-if="item.kind === 'image'">已保存图片</span>
+              <pre
+                v-if="itemDisplayText(item)"
+                class="clipboard-text clipboard-restore"
+                @click="restore(item.id)"
+                >{{ itemDisplayText(item) }}</pre>
+              <span
+                v-else-if="item.kind === 'image'"
+                class="clipboard-restore"
+                @click="restore(item.id)"
+                >已保存图片</span
+              >
             </template>
           </a-list-item-meta>
         </a-list-item>
@@ -46,5 +58,9 @@ const { items, draft, readSystem, writeText, clearHistory } = useClipboard()
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.clipboard-restore {
+  cursor: pointer;
 }
 </style>

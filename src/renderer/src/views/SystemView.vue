@@ -8,6 +8,9 @@ const store = useAppStore()
 const power = shallowRef<{ onBattery: boolean; idleState: string } | null>(null)
 const loginEnabled = computed(() => store.settings.behavior.openAtLogin)
 const theme = computed(() => store.settings.appearance.theme)
+const batteryOn = computed(() =>
+  store.onBattery !== null ? store.onBattery : (power.value?.onBattery ?? null)
+)
 
 const themeOptions: Array<{ value: ThemeMode; label: string }> = [
   { value: 'system', label: '跟随系统' },
@@ -54,11 +57,11 @@ async function setLogin(enabled: boolean): Promise<void> {
           <a-button type="primary" @click="notify">发通知</a-button>
           <a-button @click="readPower">读电源</a-button>
         </a-space>
-        <a-descriptions v-if="power" bordered :column="1" size="small">
-          <a-descriptions-item label="电池供电">
-            {{ power.onBattery ? '是' : '否' }}
+        <a-descriptions v-if="batteryOn !== null || power" bordered :column="1" size="small">
+          <a-descriptions-item v-if="batteryOn !== null" label="电池供电">
+            {{ batteryOn ? '是' : '否' }}
           </a-descriptions-item>
-          <a-descriptions-item label="空闲状态">
+          <a-descriptions-item v-if="power" label="空闲状态">
             {{ power.idleState }}
           </a-descriptions-item>
         </a-descriptions>

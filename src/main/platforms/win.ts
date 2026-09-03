@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { getDatabase } from '../services/db'
 import { getMainWindow, showMainWindow } from '../windows/main'
 import { platformError } from './error'
+import { RECENT_FILE_LIMIT } from '../services/recent-sync'
 import { existingRecentPaths } from './recent-paths'
 
 function resolveAppIcon(): Electron.NativeImage {
@@ -22,8 +23,9 @@ export function refreshWindowsJumpList(): { message: string } {
     throw platformError('E_PLATFORM: Jump List 仅支持 Windows')
   }
 
-  const paths = existingRecentPaths(queryRecentFileRows(), existsSync)
+  const paths = existingRecentPaths(queryRecentFileRows(), existsSync, RECENT_FILE_LIMIT)
   app.setJumpList([
+    { type: 'recent' },
     {
       type: 'custom',
       name: '最近文件',

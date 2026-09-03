@@ -1,8 +1,9 @@
-import { BrowserWindow } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import { is } from '@electron-toolkit/utils'
 import { buildRendererLoad } from './child-policy'
 import { attachRendererNavigation } from './navigation'
+import { attachWindowSecurity } from './window-security'
 
 const children = new Set<BrowserWindow>()
 
@@ -40,6 +41,7 @@ export function createChildWindow(hash = '/windows/lab'): BrowserWindow {
   })
   track(win)
   attachRendererNavigation(win)
+  attachWindowSecurity(win, app.isPackaged)
   load(win, hash)
   return win
 }
@@ -53,6 +55,7 @@ export function createFloatWindow(): BrowserWindow {
   })
   track(win)
   attachRendererNavigation(win)
+  attachWindowSecurity(win, app.isPackaged)
   load(win, '/windows/lab')
   return win
 }

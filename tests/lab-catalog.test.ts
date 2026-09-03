@@ -9,4 +9,9 @@ describe('lab catalog', () => {
     expect(labPaths).toHaveLength(12)
     expect(labModules.map((module) => module.path)).toEqual(labPaths)
   })
+
+  it('lists app-info and security-status on the security module', () => {
+    const security = labModules.find((module) => module.path === '/lab/security')
+    expect(security?.actions.map((action) => action.id)).toEqual(['app-info', 'security-status'])
+  })
 })

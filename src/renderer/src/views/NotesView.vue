@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import { useNotes } from '../composables/useNotes'
+import { askDeleteNote } from '../composables/useUnsavedPrompt'
+import { useAppStore } from '../stores/app'
 
 const route = useRoute()
-const { notes, current, keyword, refresh, open, create, save, remove } = useNotes()
+const store = useAppStore()
+const { notes, current, keyword, refresh, open, create, save, remove, confirmProceed } = useNotes()
 
 watch(
   () => route.query.id,
@@ -18,8 +21,14 @@ watch(
   { immediate: true }
 )
 
+onBeforeRouteLeave(async (_to, _from, next) => {
+  next((await confirmProceed()) ? undefined : false)
+})
+
 async function onRemove(): Promise<void> {
   if (!current.value) return
+  const ok = await askDeleteNote(store.notesDirty)
+  if (!ok) return
   await remove(current.value.id)
 }
 </script>
@@ -56,7 +65,10 @@ async function onRemove(): Promise<void> {
     <a-col :span="16" class="notes-pane">
       <a-form v-if="current" layout="vertical">
         <a-form-item label="标题">
-          <a-input v-model:value="current.title" placeholder="标题" />
+          <a-space>
+            <a-input v-model:value="current.title" placeholder="标题" />
+            <a-tag v-if="store.notesDirty" color="orange">未保存</a-tag>
+          </a-space>
         </a-form-item>
         <a-form-item label="正文">
           <a-textarea v-model:value="current.body" :rows="16" placeholder="正文" />
@@ -68,7 +80,7 @@ async function onRemove(): Promise<void> {
           <a-form-item label="置顶" class="notes-switch">
             <a-switch v-model:checked="current.pinned" />
           </a-form-item>
-          <a-button type="primary" @click="save">保存</a-button>
+          <a-button :type="store.notesDirty ? 'primary' : 'default'" @click="save">保存</a-button>
         </a-space>
       </a-form>
       <a-empty v-else description="选择一条笔记，或新建一条">

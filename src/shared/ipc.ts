@@ -7,6 +7,7 @@ import type {
   DownloadRecord,
   LabEvent,
   Note,
+  RecentFile,
   ThemeMode,
   UpdaterStatus
 } from './models'
@@ -30,12 +31,17 @@ export const invokeChannels = {
   'clipboard:write': true,
   'clipboard:history': true,
   'clipboard:clear-history': true,
+  'clipboard:restore': true,
+  'clipboard:delete': true,
   'files:open': true,
   'files:save': true,
   'files:show-in-folder': true,
   'files:trash': true,
   'files:start-drag': true,
   'files:add-recent': true,
+  'files:recent': true,
+  'files:open-recent': true,
+  'files:forget': true,
   'capture:sources': true,
   'capture:save': true,
   'downloads:list': true,
@@ -103,12 +109,17 @@ export interface InvokeMap {
   }
   'clipboard:history': { args: []; result: ClipboardItem[] }
   'clipboard:clear-history': { args: []; result: null }
+  'clipboard:restore': { args: [id: number]; result: null }
+  'clipboard:delete': { args: [id: number]; result: null }
   'files:open': { args: []; result: { path: string; content?: string } | null }
   'files:save': { args: [content: string]; result: { path: string } | null }
   'files:show-in-folder': { args: [target: string]; result: null }
   'files:trash': { args: [target: string]; result: null }
   'files:start-drag': { args: [target: string]; result: null }
   'files:add-recent': { args: [target: string]; result: null }
+  'files:recent': { args: []; result: RecentFile[] }
+  'files:open-recent': { args: [target: string]; result: { path: string; content?: string } }
+  'files:forget': { args: [target?: string]; result: null }
   'capture:sources': {
     args: []
     result: Array<{ id: string; name: string; thumbnailDataUrl: string }>

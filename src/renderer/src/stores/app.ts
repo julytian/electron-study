@@ -12,6 +12,7 @@ export const useAppStore = defineStore('app', () => {
   const updaterProgress = ref(0)
   const updaterMessage = ref<string | undefined>()
   const notesDirty = ref(false)
+  const onBattery = ref<boolean | null>(null)
 
   let subscribed = false
 
@@ -25,6 +26,15 @@ export const useAppStore = defineStore('app', () => {
     })
     window.api.on('updater:progress', (payload) => {
       updaterProgress.value = payload.percent
+    })
+    window.api.on('theme:changed', (payload) => {
+      settings.value = {
+        ...settings.value,
+        appearance: { ...settings.value.appearance, theme: payload.theme }
+      }
+    })
+    window.api.on('power:changed', (payload) => {
+      onBattery.value = payload.onBattery
     })
   }
 
@@ -47,6 +57,7 @@ export const useAppStore = defineStore('app', () => {
     updaterProgress,
     updaterMessage,
     notesDirty,
+    onBattery,
     bootstrap,
     saveSettings
   }

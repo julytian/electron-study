@@ -1,47 +1,95 @@
-import { computed, ref, type ComputedRef, type Ref } from 'vue'
+import type { RecentFile } from '@shared/models'
+import { isDirtySnapshot, runUnsavedGuard } from '@shared/unsaved'
+import { computed, onMounted, ref, type ComputedRef, type Ref } from 'vue'
 import { invokeIpc } from './useIpc'
+import { askUnsaved } from './useUnsavedPrompt'
 
 interface UseFiles {
   path: Ref<string | null>
   content: Ref<string>
   contentLoaded: Ref<boolean>
+  dirty: ComputedRef<boolean>
   hasPath: ComputedRef<boolean>
+  recents: Ref<RecentFile[]>
   open: () => Promise<void>
   save: () => Promise<void>
-  showInFolder: () => Promise<void>
+  showInFolder: (target?: string) => Promise<void>
   trash: () => Promise<void>
   startDrag: (event: DragEvent) => Promise<void>
+  refreshRecents: () => Promise<void>
+  openRecent: (target: string) => Promise<void>
+  forget: (target?: string) => Promise<void>
+  confirmProceed: () => Promise<boolean>
 }
 
 export function useFiles(): UseFiles {
   const path = ref<string | null>(null)
   const content = ref('')
   const contentLoaded = ref(false)
+  const cleanContent = ref<string | null>(null)
+  const recents = ref<RecentFile[]>([])
   const hasPath = computed(() => Boolean(path.value))
+  const dirty = computed(
+    () => contentLoaded.value && isDirtySnapshot(content.value, cleanContent.value)
+  )
 
-  async function open(): Promise<void> {
-    const result = await invokeIpc('files:open')
-    if (!result) return
+  function markClean(): void {
+    cleanContent.value = contentLoaded.value ? content.value : null
+  }
+
+  async function persistSave(): Promise<boolean> {
+    const result = await invokeIpc('files:save', content.value)
+    if (!result) return false
+    path.value = result.path
+    contentLoaded.value = true
+    markClean()
+    await refreshRecents()
+    return true
+  }
+
+  async function confirmProceed(): Promise<boolean> {
+    return runUnsavedGuard({
+      dirty: dirty.value,
+      ask: () => askUnsaved(),
+      save: persistSave,
+      discard: () => {
+        content.value = cleanContent.value ?? ''
+      }
+    })
+  }
+
+  async function refreshRecents(): Promise<void> {
+    recents.value = await invokeIpc('files:recent')
+  }
+
+  function applyLoaded(result: { path: string; content?: string }): void {
     path.value = result.path
     if (result.content !== undefined) {
       content.value = result.content
       contentLoaded.value = true
-      return
+    } else {
+      content.value = ''
+      contentLoaded.value = false
     }
-    content.value = ''
-    contentLoaded.value = false
+    markClean()
+  }
+
+  async function open(): Promise<void> {
+    if (!(await confirmProceed())) return
+    const result = await invokeIpc('files:open')
+    if (!result) return
+    applyLoaded(result)
+    await refreshRecents()
   }
 
   async function save(): Promise<void> {
-    const result = await invokeIpc('files:save', content.value)
-    if (!result) return
-    path.value = result.path
-    contentLoaded.value = true
+    await persistSave()
   }
 
-  async function showInFolder(): Promise<void> {
-    if (!path.value) return
-    await invokeIpc('files:show-in-folder', path.value)
+  async function showInFolder(target?: string): Promise<void> {
+    const next = target ?? path.value
+    if (!next) return
+    await invokeIpc('files:show-in-folder', next)
   }
 
   async function trash(): Promise<void> {
@@ -50,6 +98,8 @@ export function useFiles(): UseFiles {
     path.value = null
     content.value = ''
     contentLoaded.value = false
+    cleanContent.value = null
+    await refreshRecents()
   }
 
   async function startDrag(event: DragEvent): Promise<void> {
@@ -58,5 +108,38 @@ export function useFiles(): UseFiles {
     await invokeIpc('files:start-drag', path.value)
   }
 
-  return { path, content, contentLoaded, hasPath, open, save, showInFolder, trash, startDrag }
+  async function openRecent(target: string): Promise<void> {
+    if (!(await confirmProceed())) return
+    try {
+      const result = await invokeIpc('files:open-recent', target)
+      applyLoaded(result)
+    } finally {
+      await refreshRecents()
+    }
+  }
+
+  async function forget(target?: string): Promise<void> {
+    await invokeIpc('files:forget', target)
+    await refreshRecents()
+  }
+
+  onMounted(refreshRecents)
+
+  return {
+    path,
+    content,
+    contentLoaded,
+    dirty,
+    hasPath,
+    recents,
+    open,
+    save,
+    showInFolder,
+    trash,
+    startDrag,
+    refreshRecents,
+    openRecent,
+    forget,
+    confirmProceed
+  }
 }

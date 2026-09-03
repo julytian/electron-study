@@ -1,5 +1,6 @@
-import { app, BrowserWindow, crashReporter, session } from 'electron'
-import { electronApp, optimizer } from '@electron-toolkit/utils'
+import { app, BrowserWindow, crashReporter, Menu, session, shell } from 'electron'
+import { buildPackagedMenuTemplate } from './windows/app-menu'
+import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { setupLogger } from './services/logger'
 import { ensureAppDirs } from './services/paths'
 import { openDatabase, closeDatabase } from './services/db'
@@ -10,9 +11,10 @@ import { registerShortcuts } from './services/shortcuts'
 import { watchBrowserRoute } from './ipc/browser'
 import { createMainWindow, getMainWindow, setAppQuitting } from './windows/main'
 import { registerIpc } from './ipc/register'
-import { isDefaultSessionPermissionAllowed } from './services/session-permissions'
+import { attachSessionSecurity } from './services/session-security'
 import { refreshDockMenu } from './platforms/mac'
 import { refreshWindowsJumpList } from './platforms/win'
+import { purgeMissingRecentFiles, rebuildSystemRecentDocuments } from './services/recent-documents'
 import {
   extractFileFromArgv,
   extractUrlFromArgv,
@@ -70,9 +72,41 @@ app.whenReady().then(() => {
   })
 
   electronApp.setAppUserModelId('com.electronlab.app')
-  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
-    callback(isDefaultSessionPermissionAllowed(permission))
+  attachSessionSecurity(session.defaultSession, 'app', {
+    packaged: app.isPackaged,
+    isDev: is.dev
   })
+
+  function applyApplicationMenu(packaged: boolean): void {
+    if (!packaged) return
+
+    const template = buildPackagedMenuTemplate().map((item) => {
+      if (item.label === '帮助' && item.submenu) {
+        return {
+          ...item,
+          submenu: item.submenu.map((subItem) => {
+            if (subItem.label === '打开仓库') {
+              return {
+                ...subItem,
+                click: () => {
+                  void shell.openExternal('https://github.com/julytian/electron-study')
+                }
+              }
+            }
+            return subItem
+          })
+        }
+      }
+      return item
+    })
+
+    Menu.setApplicationMenu(
+      Menu.buildFromTemplate(template as Electron.MenuItemConstructorOptions[])
+    )
+  }
+
+  applyApplicationMenu(app.isPackaged)
+
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
@@ -85,6 +119,9 @@ app.whenReady().then(() => {
     app.quit()
     return
   }
+
+  purgeMissingRecentFiles()
+  rebuildSystemRecentDocuments()
 
   registerIpc()
   registerProtocol()

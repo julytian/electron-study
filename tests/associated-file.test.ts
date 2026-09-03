@@ -6,7 +6,10 @@ import Database from 'better-sqlite3'
 import { migrate } from '../src/main/services/db/migrations'
 import { MAX_TEXT_BYTES, rememberOpened } from '../src/main/services/files'
 import { createNotesService, type SafeStorageLike } from '../src/main/services/notes'
-import { processAssociatedFileContent } from '../src/main/services/associated-file'
+import {
+  processAssociatedFileContent,
+  type AssociatedFileResult
+} from '../src/main/services/associated-file'
 
 function memoryDb(): Database.Database {
   const db = new Database(':memory:')
@@ -26,7 +29,7 @@ function recentPaths(db: Database.Database): string[] {
   ).map((row) => row.path)
 }
 
-function processRealFile(db: Database.Database, filePath: string) {
+function processRealFile(db: Database.Database, filePath: string): AssociatedFileResult {
   const notes = createNotesService(db, stubCrypto)
   return processAssociatedFileContent(filePath, {
     remember: (absPath) => rememberOpened(db, absPath),

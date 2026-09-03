@@ -2,6 +2,7 @@ import { app } from 'electron'
 import { readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { parseDeepLink, type DeepLink } from '../../shared/deep-link'
+import { refreshWindowsJumpList } from '../platforms/win'
 import { getMainWindow } from '../windows/main'
 import { processAssociatedFileContent } from './associated-file'
 import { patchSettings } from './conf'
@@ -9,6 +10,7 @@ import { createSafeStorage } from './crypto'
 import { getDatabase } from './db'
 import { rememberOpened } from './files'
 import { createNotesService } from './notes'
+import { rememberSystemDocument } from './recent-documents'
 import { PROTOCOL } from './protocol-url'
 
 export {
@@ -97,7 +99,18 @@ function processAssociatedFile(filePath: string): void {
   const db = getDatabase()
   const notes = createNotesService(db, createSafeStorage())
   const result = processAssociatedFileContent(filePath, {
-    remember: (absPath) => rememberOpened(db, absPath),
+    remember: (absPath) => {
+      const path = rememberOpened(db, absPath)
+      rememberSystemDocument(path)
+      if (process.platform === 'win32') {
+        try {
+          refreshWindowsJumpList()
+        } catch {
+          /* ignore */
+        }
+      }
+      return path
+    },
     fs: {
       statSize: (target) => statSync(target).size,
       readText: (target) => readFileSync(target, 'utf8')

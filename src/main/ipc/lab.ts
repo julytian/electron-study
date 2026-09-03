@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { is } from '@electron-toolkit/utils'
 import { errorCodes, ipcError, ipcOk, type IpcResult } from '../../shared/ipc-result'
 import type { UpdaterStatus } from '../../shared/models'
+import { formatSecurityStatus } from '../../shared/security-status'
 import { applyTouchBar, refreshDockMenu } from '../platforms/mac'
 import { refreshWindowsJumpList } from '../platforms/win'
 import { getDatabase } from '../services/db'
@@ -118,10 +119,15 @@ async function executeLab(module: string, action: string): Promise<IpcResult<{ m
     if (action === 'set-touchbar') return ipcOk(applyTouchBar())
   }
 
-  if (module === 'security' && action === 'app-info') {
-    return ipcOk({
-      message: `name=${app.getName()} version=${app.getVersion()} packaged=${app.isPackaged} sandbox=渲染进程无 Node`
-    })
+  if (module === 'security') {
+    if (action === 'app-info') {
+      return ipcOk({
+        message: `name=${app.getName()} version=${app.getVersion()} packaged=${app.isPackaged} sandbox=渲染进程无 Node`
+      })
+    }
+    if (action === 'security-status') {
+      return ipcOk({ message: formatSecurityStatus(app.isPackaged) })
+    }
   }
 
   if (module === 'window' && action === 'create-child') {

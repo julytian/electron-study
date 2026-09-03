@@ -6,6 +6,7 @@ import Database from 'better-sqlite3'
 import { migrate } from '../src/main/services/db/migrations'
 import {
   createFilesService,
+  insertRecentFile,
   rememberOpened,
   type DialogLike,
   type FileShellLike
@@ -149,16 +150,51 @@ describe('files service', () => {
   })
 
   it('remembers OS-opened paths without the userData jail', () => {
-    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
     const outsider = join(tmpdir(), `elab-os-open-${Date.now()}.md`)
     writeFileSync(outsider, '# hello')
     const db = memoryDb()
 
     expect(rememberOpened(db, outsider)).toBe(resolve(outsider))
     expect(recentPaths(db)).toEqual([resolve(outsider)])
-    expect(() =>
-      createFilesService(db, userData, stubDialogs({}), stubShell()).addRecent(outsider)
-    ).toThrowError(/E_PATH/)
+  })
+
+  it('shows a recent_files path outside userData that was not opened this session', () => {
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const outsider = join(tmpdir(), `elab-recent-table-${Date.now()}.txt`)
+    writeFileSync(outsider, 'from recent table')
+    const db = memoryDb()
+    const resolved = rememberOpened(db, outsider)
+    const shell = stubShell()
+    const service = createFilesService(db, userData, stubDialogs({}), shell)
+
+    service.showInFolder(outsider)
+
+    expect(shell.shown).toEqual([resolved])
+    expect(() => service.assertAllowed(outsider)).toThrowError(/E_PATH/)
+  })
+
+  it('does not let recent_files grant trash or addRecent for an outsider', async () => {
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const outsider = join(tmpdir(), `elab-recent-deny-${Date.now()}.txt`)
+    writeFileSync(outsider, 'from recent table')
+    const db = memoryDb()
+    rememberOpened(db, outsider)
+    const service = createFilesService(db, userData, stubDialogs({}), stubShell())
+
+    await expect(service.trash(outsider)).rejects.toThrowError(/E_PATH/)
+    expect(() => service.addRecent(outsider)).toThrowError(/E_PATH/)
+  })
+
+  it('does not let rememberOpened outsider addRecent or trash via a fresh service', async () => {
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const outsider = join(tmpdir(), `elab-os-fresh-${Date.now()}.md`)
+    writeFileSync(outsider, '# hello')
+    const db = memoryDb()
+    rememberOpened(db, outsider)
+    const fresh = createFilesService(db, userData, stubDialogs({}), stubShell())
+
+    expect(() => fresh.addRecent(outsider)).toThrowError(/E_PATH/)
+    await expect(fresh.trash(outsider)).rejects.toThrowError(/E_PATH/)
   })
 
   it('adds allowlisted or userData paths to recent_files', async () => {
@@ -172,6 +208,175 @@ describe('files service', () => {
 
     service.addRecent(file)
 
-    expect(recentPaths(db)).toEqual([resolve(file), resolve(file)])
+    expect(recentPaths(db)).toEqual([resolve(file)])
+  })
+
+  it('upserts the same path and updates openedAt on listRecent', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const file = join(root, 'twice.txt')
+    writeFileSync(file, 'once')
+    const db = memoryDb()
+    const service = createFilesService(db, userData, stubDialogs({ open: file }), stubShell())
+
+    await service.open()
+    const first = service.listRecent()
+    expect(first).toHaveLength(1)
+    expect(first[0].path).toBe(resolve(file))
+    expect(typeof first[0].openedAt).toBe('number')
+
+    await new Promise((resolveTimer) => setTimeout(resolveTimer, 15))
+    await service.open()
+
+    const second = service.listRecent()
+    expect(second).toHaveLength(1)
+    expect(second[0].path).toBe(resolve(file))
+    expect(second[0].openedAt).toBeGreaterThan(first[0].openedAt)
+    expect(recentPaths(db)).toEqual([resolve(file)])
+  })
+
+  it('openRecent returns content for an existing text file', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const file = join(root, 'recent.txt')
+    writeFileSync(file, 'from recent')
+    const service = createFilesService(
+      memoryDb(),
+      userData,
+      stubDialogs({ open: file }),
+      stubShell()
+    )
+    await service.open()
+
+    expect(service.openRecent(file)).toEqual({
+      path: resolve(file),
+      content: 'from recent'
+    })
+  })
+
+  it('openRecent upserts opened_at so the file becomes newest', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const file = join(root, 'stale.txt')
+    writeFileSync(file, 'stale then reopen')
+    const db = memoryDb()
+    const resolved = resolve(file)
+    const service = createFilesService(db, userData, stubDialogs({ open: file }), stubShell())
+    await service.open()
+    db.prepare('UPDATE recent_files SET opened_at = ? WHERE path = ?').run(1000, resolved)
+
+    const result = service.openRecent(file)
+
+    expect(result).toEqual({ path: resolved, content: 'stale then reopen' })
+    const listed = service.listRecent()
+    expect(listed).toHaveLength(1)
+    expect(listed[0].path).toBe(resolved)
+    expect(listed[0].openedAt).toBeGreaterThan(1000)
+  })
+
+  it('openRecent rejects a disk file that is not in recent_files and does not allowlist it', () => {
+    const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const outsider = join(root, 'not-listed.txt')
+    writeFileSync(outsider, 'exists on disk')
+    const service = createFilesService(memoryDb(), userData, stubDialogs({}), stubShell())
+
+    expect(() => service.openRecent(outsider)).toThrowError(/E_NOT_FOUND/)
+    expect(() => service.assertAllowed(outsider)).toThrowError(/E_PATH/)
+    expect(() => service.showInFolder(outsider)).toThrowError(/E_PATH/)
+  })
+
+  it('insertRecentFile collapses duplicate rows for the same path', () => {
+    const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const file = join(root, 'dup.txt')
+    writeFileSync(file, 'dup')
+    const db = memoryDb()
+    const resolved = resolve(file)
+    db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run(resolved, 1)
+    db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run(resolved, 2)
+    expect(recentPaths(db)).toHaveLength(2)
+
+    insertRecentFile(db, resolved)
+
+    const listed = createFilesService(db, userData, stubDialogs({}), stubShell()).listRecent()
+    expect(listed).toHaveLength(1)
+    expect(listed[0].path).toBe(resolved)
+    expect(recentPaths(db)).toEqual([resolved])
+  })
+
+  it('forget(path) removes that path from listRecent', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const file = join(root, 'drop.txt')
+    writeFileSync(file, 'drop me')
+    const db = memoryDb()
+    const service = createFilesService(db, userData, stubDialogs({ open: file }), stubShell())
+    await service.open()
+
+    service.forget(file)
+
+    expect(service.listRecent()).toEqual([])
+    expect(recentPaths(db)).toEqual([])
+  })
+
+  it('forget() with no argument clears all recent files', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const first = join(root, 'a.txt')
+    const second = join(root, 'b.txt')
+    writeFileSync(first, 'a')
+    const db = memoryDb()
+    const service = createFilesService(
+      db,
+      userData,
+      stubDialogs({ open: first, save: second }),
+      stubShell()
+    )
+    await service.open()
+    await service.save('b')
+    expect(service.listRecent()).toHaveLength(2)
+
+    service.forget()
+
+    expect(service.listRecent()).toEqual([])
+    expect(recentPaths(db)).toEqual([])
+  })
+
+  it('forget() with no target revokes allowlist so outsider trash and assertAllowed throw E_PATH', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const outsider = join(root, 'session.txt')
+    writeFileSync(outsider, 'opened then forgotten')
+    const service = createFilesService(
+      memoryDb(),
+      userData,
+      stubDialogs({ open: outsider }),
+      stubShell()
+    )
+    await service.open()
+    expect(service.assertAllowed(outsider)).toBe(resolve(outsider))
+
+    service.forget()
+
+    expect(() => service.assertAllowed(outsider)).toThrowError(/E_PATH/)
+    await expect(service.trash(outsider)).rejects.toThrowError(/E_PATH/)
+  })
+
+  it('listRecent returns one row when the same path was inserted twice', () => {
+    const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const file = join(root, 'legacy-dup.txt')
+    writeFileSync(file, 'dup history')
+    const db = memoryDb()
+    const resolved = resolve(file)
+    db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run(resolved, 1000)
+    db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run(resolved, 2000)
+
+    const listed = createFilesService(db, userData, stubDialogs({}), stubShell()).listRecent()
+
+    expect(listed).toHaveLength(1)
+    expect(listed[0].path).toBe(resolved)
+    expect(listed[0].openedAt).toBe(2000)
   })
 })
