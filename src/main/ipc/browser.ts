@@ -9,6 +9,7 @@ import {
 } from '../services/browser-session'
 import { getMainWindow } from '../windows/main'
 import { browserViewBounds, isBrowserRoute, normalizeBrowserUrl } from '../windows/browser-policy'
+import { attachPackagedContextMenu } from '../windows/window-security'
 
 let browserView: WebContentsView | null = null
 let attached = false
@@ -41,6 +42,7 @@ function createView(): WebContentsView {
     }
   })
   const wc = view.webContents
+  if (app.isPackaged) attachPackagedContextMenu(wc)
   wc.setWindowOpenHandler(({ url }) => {
     const parsed = normalizeBrowserUrl(url)
     if (parsed.ok) void wc.loadURL(parsed.url)
