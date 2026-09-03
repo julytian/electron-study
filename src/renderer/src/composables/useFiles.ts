@@ -51,7 +51,10 @@ export function useFiles(): UseFiles {
     return runUnsavedGuard({
       dirty: dirty.value,
       ask: () => askUnsaved(),
-      save: persistSave
+      save: persistSave,
+      discard: () => {
+        content.value = cleanContent.value ?? ''
+      }
     })
   }
 

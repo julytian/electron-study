@@ -64,4 +64,17 @@ describe('runUnsavedGuard', () => {
       runUnsavedGuard({ dirty: true, ask: async () => 'discard', save: async () => true })
     ).resolves.toBe(true)
   })
+
+  it('runs discard callback when user discards', async () => {
+    const discard = vi.fn()
+    await expect(
+      runUnsavedGuard({
+        dirty: true,
+        ask: async () => 'discard',
+        save: async () => true,
+        discard
+      })
+    ).resolves.toBe(true)
+    expect(discard).toHaveBeenCalledOnce()
+  })
 })

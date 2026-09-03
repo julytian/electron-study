@@ -33,19 +33,32 @@ export function useNotes(): UseNotes {
     app.notesDirty = isDirtySnapshot(noteSnapshot(current.value), cleanSnapshot)
   }
 
+  function restoreCleanSnapshot(): void {
+    if (current.value && cleanSnapshot) {
+      const snap = JSON.parse(cleanSnapshot) as {
+        title: string
+        body: string
+        pinned: boolean
+        isEncrypted: boolean
+      }
+      current.value.title = snap.title
+      current.value.body = snap.body
+      current.value.pinned = snap.pinned
+      current.value.isEncrypted = snap.isEncrypted
+    }
+    markClean(current.value)
+  }
+
   async function confirmProceed(): Promise<boolean> {
     return runUnsavedGuard({
       dirty: app.notesDirty,
-      ask: async () => {
-        const choice = await askUnsaved()
-        if (choice === 'discard') app.notesDirty = false
-        return choice
-      },
+      ask: askUnsaved,
       save: async () => {
         if (!current.value) return true
         await save()
         return true
-      }
+      },
+      discard: restoreCleanSnapshot
     })
   }
 
@@ -54,9 +67,8 @@ export function useNotes(): UseNotes {
   }
 
   async function open(id: number): Promise<void> {
-    if (current.value?.id !== id) {
-      if (!(await confirmProceed())) return
-    }
+    if (current.value?.id === id) return
+    if (!(await confirmProceed())) return
     current.value = await invokeIpc('notes:get', id)
     markClean(current.value)
   }

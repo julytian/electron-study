@@ -22,10 +22,12 @@ export async function runUnsavedGuard(options: {
   dirty: boolean
   ask: () => Promise<UnsavedChoice>
   save: () => Promise<boolean>
+  discard?: () => void | Promise<void>
 }): Promise<boolean> {
   if (!options.dirty) return true
   const choice = await options.ask()
   if (choice === 'cancel') return false
   if (choice === 'save') return options.save()
+  await options.discard?.()
   return true
 }
