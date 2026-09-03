@@ -29,6 +29,8 @@ pnpm build:win
 pnpm build:linux
 ```
 
+CI 在检查通过后会打一份未签名的 Linux AppImage，制品挂在该次 Actions 上。不打 snap（需要额外工具）。
+
 本仓库不做代码签名和 macOS 公证（`electron-builder` 的 `notarize` 为 `false`）。未签名的 macOS 包可能要在「隐私与安全性」里允许打开；Windows 可能被 SmartScreen 拦截。
 
 ## 更新
