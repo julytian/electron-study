@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { isSameRendererDocument, shouldHideToTray, withHash } from '../src/main/windows/window-policy'
+import {
+  isRendererNavigationAllowed,
+  isSameRendererDocument,
+  shouldHideToTray,
+  withHash
+} from '../src/main/windows/window-policy'
 
 describe('withHash', () => {
   it('keeps origin and sets the hash route', () => {
@@ -34,6 +39,33 @@ describe('isSameRendererDocument', () => {
   it('rejects a different host', () => {
     expect(
       isSameRendererDocument('http://localhost:5173/', 'https://example.com/#/workbench/notes')
+    ).toBe(false)
+  })
+})
+
+describe('isRendererNavigationAllowed', () => {
+  it('allows hash-only navigation on the same renderer document', () => {
+    expect(
+      isRendererNavigationAllowed(
+        'http://localhost:5173/',
+        'http://localhost:5173/#/windows/lab',
+        true
+      )
+    ).toBe(true)
+  })
+
+  it('allows localhost only in development', () => {
+    expect(
+      isRendererNavigationAllowed('http://localhost:5173/', 'http://127.0.0.1:5173/', true)
+    ).toBe(true)
+    expect(
+      isRendererNavigationAllowed('http://localhost:5173/', 'http://127.0.0.1:5173/', false)
+    ).toBe(false)
+  })
+
+  it('rejects an external site even in development', () => {
+    expect(
+      isRendererNavigationAllowed('http://localhost:5173/', 'https://example.com/', true)
     ).toBe(false)
   })
 })

@@ -1,10 +1,10 @@
-import { BrowserWindow, shell } from 'electron'
+import { BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import { is } from '@electron-toolkit/utils'
 import { getSettings, patchSettings } from '../services/conf'
-import { isAllowedExternalUrl } from '../../shared/external-url'
 import { closeAllChildren } from './child'
-import { isSameRendererDocument, shouldHideToTray, withHash } from './window-policy'
+import { attachRendererNavigation } from './navigation'
+import { shouldHideToTray, withHash } from './window-policy'
 
 let mainWindow: BrowserWindow | null = null
 let quitting = false
@@ -119,28 +119,7 @@ export function createMainWindow(hash?: string): BrowserWindow {
     mainWindow = null
   })
 
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (isAllowedExternalUrl(url)) shell.openExternal(url)
-    return { action: 'deny' }
-  })
-
-  mainWindow.webContents.on('will-navigate', (event, url) => {
-    const current = mainWindow?.webContents.getURL() ?? ''
-    let allowed = url === current || isSameRendererDocument(current, url)
-    if (!allowed) {
-      try {
-        const parsed = new URL(url)
-        allowed = is.dev && (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')
-      } catch {
-        allowed = false
-      }
-    }
-    if (!allowed) {
-      event.preventDefault()
-      if (isAllowedExternalUrl(url)) shell.openExternal(url)
-    }
-  })
-
+  attachRendererNavigation(mainWindow)
   loadMainWindow(mainWindow, hash)
 
   return mainWindow

@@ -35,7 +35,7 @@ describe('REQUEST_FILTER_URLS', () => {
 
 describe('certificateVerifyVerdict', () => {
   it('uses Chromium default verification when insecure certs are off', () => {
-    expect(certificateVerifyVerdict(false)).toBe(-2)
+    expect(certificateVerifyVerdict(false)).toBe(-3)
   })
 
   it('accepts the certificate only when the lab switch is on', () => {

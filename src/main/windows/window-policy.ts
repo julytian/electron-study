@@ -15,6 +15,20 @@ export function isSameRendererDocument(current: string, next: string): boolean {
   }
 }
 
+export function isRendererNavigationAllowed(
+  current: string,
+  next: string,
+  isDev: boolean
+): boolean {
+  if (next === current || isSameRendererDocument(current, next)) return true
+  try {
+    const parsed = new URL(next)
+    return isDev && (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')
+  } catch {
+    return false
+  }
+}
+
 export function shouldHideToTray(options: {
   closeToTray: boolean
   platform: NodeJS.Platform

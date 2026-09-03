@@ -6,8 +6,8 @@ export function shouldCancelFilteredRequest(url: string): boolean {
   return url.includes(BLOCKED_URL_MARKER)
 }
 
-export function certificateVerifyVerdict(allowInsecure: boolean): 0 | -2 {
-  return allowInsecure ? 0 : -2
+export function certificateVerifyVerdict(allowInsecure: boolean): 0 | -3 {
+  return allowInsecure ? 0 : -3
 }
 
 export function resolveAllowInsecureCerts(

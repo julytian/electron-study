@@ -127,7 +127,7 @@ async function setInsecure(enabled: boolean): Promise<void> {
         </li>
         <li>
           证书默认
-          <a-typography-text code>callback(-2)</a-typography-text>
+          <a-typography-text code>callback(-3)</a-typography-text>
           走 Chromium / 系统校验；仅开发态开关打开才
           <a-typography-text code>callback(0)</a-typography-text>
           。

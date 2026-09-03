@@ -2,6 +2,7 @@ import { BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import { is } from '@electron-toolkit/utils'
 import { buildRendererLoad } from './child-policy'
+import { attachRendererNavigation } from './navigation'
 
 const children = new Set<BrowserWindow>()
 
@@ -9,7 +10,8 @@ const childWebPreferences = {
   preload: join(__dirname, '../preload/index.js'),
   sandbox: true,
   contextIsolation: true,
-  nodeIntegration: false
+  nodeIntegration: false,
+  webSecurity: true
 }
 
 function load(win: BrowserWindow, hash: string): void {
@@ -37,6 +39,7 @@ export function createChildWindow(hash = '/windows/lab'): BrowserWindow {
     webPreferences: childWebPreferences
   })
   track(win)
+  attachRendererNavigation(win)
   load(win, hash)
   return win
 }
@@ -49,6 +52,7 @@ export function createFloatWindow(): BrowserWindow {
     webPreferences: childWebPreferences
   })
   track(win)
+  attachRendererNavigation(win)
   load(win, '/windows/lab')
   return win
 }
