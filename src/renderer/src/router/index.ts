@@ -5,6 +5,7 @@ import PlaceholderView from '../views/PlaceholderView.vue'
 import SettingsView from '../views/SettingsView.vue'
 import AboutView from '../views/AboutView.vue'
 import NotesView from '../views/NotesView.vue'
+import ClipboardView from '../views/ClipboardView.vue'
 
 const children = routeGroups.flatMap((group) =>
   group.items.map((item) => {
@@ -16,6 +17,9 @@ const children = routeGroups.flatMap((group) =>
     }
     if (item.path === '/workbench/notes') {
       return { path: item.path, component: NotesView }
+    }
+    if (item.path === '/workbench/clipboard') {
+      return { path: item.path, component: ClipboardView }
     }
     return { path: item.path, component: PlaceholderView }
   })
