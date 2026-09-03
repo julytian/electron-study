@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { UpdaterStatus } from '@shared/models'
+import LabPage from '../../components/LabPage.vue'
 import { invokeIpc } from '../../composables/useIpc'
+import { labModules } from '../../lab/catalog'
 import { useAppStore } from '../../stores/app'
 
 const MOCK_STATES: Array<{ status: UpdaterStatus; label: string }> = [
@@ -14,6 +16,8 @@ const MOCK_STATES: Array<{ status: UpdaterStatus; label: string }> = [
 
 const store = useAppStore()
 const currentStatus = computed(() => store.updaterStatus)
+const advancedModule = computed(() => labModules.find((module) => module.path === '/lab/advanced'))
+const crashDisabledIds = computed(() => (store.info?.isPackaged ? ['crash-main'] : []))
 
 async function mock(status: UpdaterStatus): Promise<void> {
   await invokeIpc('updater:mock', status)
@@ -22,6 +26,12 @@ async function mock(status: UpdaterStatus): Promise<void> {
 
 <template>
   <a-space direction="vertical" class="advanced-lab" :size="16">
+    <LabPage
+      v-if="advancedModule"
+      :module="advancedModule"
+      :disabled-action-ids="crashDisabledIds"
+    />
+
     <a-card title="说明">
       <a-typography>
         <a-typography-paragraph>

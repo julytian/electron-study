@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, crashReporter } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { setupLogger } from './services/logger'
 import { ensureAppDirs } from './services/paths'
@@ -51,6 +51,14 @@ app.on('open-file', (event, filePath) => {
 
 app.whenReady().then(() => {
   if (!gotLock) return
+
+  if (app.isPackaged) {
+    crashReporter.start({
+      submitURL: '',
+      uploadToServer: false,
+      extra: { app: 'electron-lab' }
+    })
+  }
 
   const log = setupLogger()
   process.on('uncaughtException', (error) => {

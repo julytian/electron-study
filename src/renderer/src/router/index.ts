@@ -20,6 +20,8 @@ import NetworkLabView from '../views/lab/NetworkLabView.vue'
 import PlatformLabView from '../views/lab/PlatformLabView.vue'
 import ProtocolLabView from '../views/lab/ProtocolLabView.vue'
 import AdvancedLabView from '../views/lab/AdvancedLabView.vue'
+import LabHostView from '../views/lab/LabHostView.vue'
+import MetricsView from '../views/MetricsView.vue'
 
 const children = routeGroups.flatMap((group) =>
   group.items.map((item) => {
@@ -73,6 +75,12 @@ const children = routeGroups.flatMap((group) =>
     }
     if (item.path === '/lab/advanced') {
       return { path: item.path, component: AdvancedLabView }
+    }
+    if (item.path === '/lab/metrics') {
+      return { path: item.path, component: MetricsView }
+    }
+    if (item.path.startsWith('/lab/')) {
+      return { path: item.path, component: LabHostView }
     }
     return { path: item.path, component: PlaceholderView }
   })
