@@ -2,7 +2,17 @@
 
 日常桌面工具 + Electron API 实验室。用沙箱和白名单 IPC 把笔记、剪贴板、文件和常见 Electron API 做成可点的模块，面向学习和自用。
 
-仓库：<https://github.com/julytian/electron-study>
+仓库：<https://github.com/julytian/electron-lab>
+
+## 文档
+
+| 文档                         | 适合谁                                       |
+| ---------------------------- | -------------------------------------------- |
+| [使用指南](docs/guide.md)    | 安装后怎么用每一页、数据在哪、常见问题       |
+| [上手教程](docs/tutorial.md) | 从 `pnpm dev` 到加密笔记、深链、查找、对照表 |
+| [实验室手册](docs/lab.md)    | 12 个实验室模块要点哪个按钮、学什么          |
+
+实现期规格在 `docs/superpowers/`，不是给终端用户看的。
 
 ## 开发
 
