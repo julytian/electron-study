@@ -134,7 +134,7 @@ export interface InvokeMap {
   'system:notify': { args: [input: { title: string; body: string; route?: string }]; result: null }
   'system:get-power': {
     args: []
-    result: { onBattery: boolean; idleState: string }
+    result: { onBattery: boolean; idleState: string; online: boolean }
   }
   'system:set-theme': { args: [theme: ThemeMode]; result: null }
   'system:set-login': { args: [enabled: boolean]; result: null }
@@ -183,7 +183,7 @@ export interface EventMap {
   'download:updated': DownloadRecord
   'deep-link:open': { kind: 'note'; id: number }
   'theme:changed': { theme: ThemeMode }
-  'power:changed': { onBattery: boolean }
+  'power:changed': { onBattery: boolean; online: boolean }
   'port:message': { side: 'left' | 'right'; text: string }
   'browser:nav': { url: string; canBack: boolean; canForward: boolean }
 }

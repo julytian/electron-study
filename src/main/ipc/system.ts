@@ -1,6 +1,7 @@
-import { app, ipcMain, nativeTheme, Notification, powerMonitor } from 'electron'
+import { app, ipcMain, nativeTheme, net, Notification, powerMonitor } from 'electron'
 import { errorCodes, ipcError, ipcOk } from '../../shared/ipc-result'
 import type { ThemeMode } from '../../shared/models'
+import { powerChangedPayload, powerSnapshot, readOnlineFlag } from '../../shared/power-status'
 import { getSettings, patchSettings } from '../services/conf'
 import { getMainWindow, showMainWindow } from '../windows/main'
 
@@ -25,10 +26,13 @@ export function registerSystemIpc(): void {
   )
 
   ipcMain.handle('system:get-power', () =>
-    ipcOk({
-      onBattery: powerMonitor.isOnBatteryPower(),
-      idleState: powerMonitor.getSystemIdleState(60)
-    })
+    ipcOk(
+      powerSnapshot({
+        onBattery: powerMonitor.isOnBatteryPower(),
+        idleState: powerMonitor.getSystemIdleState(60),
+        isOnline: readOnlineFlag(() => net.isOnline())
+      })
+    )
   )
 
   ipcMain.handle('system:set-theme', (_e, theme: ThemeMode) => {
@@ -57,8 +61,15 @@ export function registerSystemIpc(): void {
   const sendPower = (): void => {
     const win = getMainWindow()
     if (!win || win.isDestroyed()) return
-    win.webContents.send('power:changed', { onBattery: powerMonitor.isOnBatteryPower() })
+    win.webContents.send(
+      'power:changed',
+      powerChangedPayload({
+        onBattery: powerMonitor.isOnBatteryPower(),
+        isOnline: readOnlineFlag(() => net.isOnline())
+      })
+    )
   }
   powerMonitor.on('on-ac', sendPower)
   powerMonitor.on('on-battery', sendPower)
+  powerMonitor.on('resume', sendPower)
 }

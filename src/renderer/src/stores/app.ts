@@ -13,6 +13,7 @@ export const useAppStore = defineStore('app', () => {
   const updaterMessage = ref<string | undefined>()
   const notesDirty = ref(false)
   const onBattery = ref<boolean | null>(null)
+  const online = ref<boolean | null>(null)
 
   let subscribed = false
 
@@ -35,6 +36,7 @@ export const useAppStore = defineStore('app', () => {
     })
     window.api.on('power:changed', (payload) => {
       onBattery.value = payload.onBattery
+      online.value = payload.online
     })
   }
 
@@ -58,6 +60,7 @@ export const useAppStore = defineStore('app', () => {
     updaterMessage,
     notesDirty,
     onBattery,
+    online,
     bootstrap,
     saveSettings
   }
