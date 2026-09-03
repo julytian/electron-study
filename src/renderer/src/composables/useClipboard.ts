@@ -1,3 +1,4 @@
+import { message } from 'ant-design-vue'
 import { onMounted, ref, type Ref } from 'vue'
 import type { ClipboardItem } from '@shared/models'
 import { invokeIpc } from './useIpc'
@@ -25,6 +26,8 @@ interface UseClipboard {
   readSystem: () => Promise<void>
   writeText: () => Promise<void>
   clearHistory: () => Promise<void>
+  restore: (id: number) => Promise<void>
+  remove: (id: number) => Promise<void>
 }
 
 export function useClipboard(): UseClipboard {
@@ -52,9 +55,19 @@ export function useClipboard(): UseClipboard {
     await refresh()
   }
 
+  async function restore(id: number): Promise<void> {
+    await invokeIpc('clipboard:restore', id)
+    message.success('已写回剪贴板')
+  }
+
+  async function remove(id: number): Promise<void> {
+    await invokeIpc('clipboard:delete', id)
+    await refresh()
+  }
+
   onMounted(() => {
     void refresh()
   })
 
-  return { items, draft, refresh, readSystem, writeText, clearHistory }
+  return { items, draft, refresh, readSystem, writeText, clearHistory, restore, remove }
 }
