@@ -172,6 +172,87 @@ describe('files service', () => {
 
     service.addRecent(file)
 
-    expect(recentPaths(db)).toEqual([resolve(file), resolve(file)])
+    expect(recentPaths(db)).toEqual([resolve(file)])
+  })
+
+  it('upserts the same path and updates openedAt on listRecent', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const file = join(root, 'twice.txt')
+    writeFileSync(file, 'once')
+    const db = memoryDb()
+    const service = createFilesService(db, userData, stubDialogs({ open: file }), stubShell())
+
+    await service.open()
+    const first = service.listRecent()
+    expect(first).toHaveLength(1)
+    expect(first[0].path).toBe(resolve(file))
+    expect(typeof first[0].openedAt).toBe('number')
+
+    await new Promise((resolveTimer) => setTimeout(resolveTimer, 15))
+    await service.open()
+
+    const second = service.listRecent()
+    expect(second).toHaveLength(1)
+    expect(second[0].path).toBe(resolve(file))
+    expect(second[0].openedAt).toBeGreaterThan(first[0].openedAt)
+    expect(recentPaths(db)).toEqual([resolve(file)])
+  })
+
+  it('openRecent returns content for an existing text file', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const file = join(root, 'recent.txt')
+    writeFileSync(file, 'from recent')
+    const service = createFilesService(
+      memoryDb(),
+      userData,
+      stubDialogs({ open: file }),
+      stubShell()
+    )
+    await service.open()
+
+    expect(service.openRecent(file)).toEqual({
+      path: resolve(file),
+      content: 'from recent'
+    })
+  })
+
+  it('forget(path) removes that path from listRecent', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const file = join(root, 'drop.txt')
+    writeFileSync(file, 'drop me')
+    const db = memoryDb()
+    const service = createFilesService(db, userData, stubDialogs({ open: file }), stubShell())
+    await service.open()
+
+    service.forget(file)
+
+    expect(service.listRecent()).toEqual([])
+    expect(recentPaths(db)).toEqual([])
+  })
+
+  it('forget() with no argument clears all recent files', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const first = join(root, 'a.txt')
+    const second = join(root, 'b.txt')
+    writeFileSync(first, 'a')
+    const db = memoryDb()
+    const service = createFilesService(
+      db,
+      userData,
+      stubDialogs({ open: first, save: second }),
+      stubShell()
+    )
+    await service.open()
+    await service.save('b')
+    expect(service.listRecent()).toHaveLength(2)
+
+    service.forget()
+
+    expect(service.listRecent()).toEqual([])
+    expect(recentPaths(db)).toEqual([])
   })
 })

@@ -1,12 +1,22 @@
-import { readFileSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type Database from 'better-sqlite3'
+import type { RecentFile } from '../../shared/models'
 import { assertWithinRoot } from './path-jail'
+import { RECENT_FILE_LIMIT } from './recent-sync'
 
 export const MAX_TEXT_BYTES = 2 * 1024 * 1024
 
 export function insertRecentFile(db: Database.Database, filePath: string): void {
-  db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run(filePath, Date.now())
+  const now = Date.now()
+  const existing = db.prepare('SELECT id FROM recent_files WHERE path = ?').get(filePath) as
+    | { id: number }
+    | undefined
+  if (existing) {
+    db.prepare('UPDATE recent_files SET opened_at = ? WHERE id = ?').run(now, existing.id)
+    return
+  }
+  db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run(filePath, now)
 }
 
 export function rememberOpened(db: Database.Database, absPath: string): string {
@@ -34,6 +44,16 @@ function pathError(message: string): Error {
   return Object.assign(new Error(message), { name: 'E_PATH' })
 }
 
+function notFoundError(message: string): Error {
+  return Object.assign(new Error(message), { name: 'E_NOT_FOUND' })
+}
+
+function readIfText(filePath: string): { path: string; content?: string } {
+  const size = statSync(filePath).size
+  if (size > MAX_TEXT_BYTES) return { path: filePath }
+  return { path: filePath, content: readFileSync(filePath, 'utf8') }
+}
+
 export interface FilesService {
   open(): Promise<{ path: string; content?: string } | null>
   save(content: string): Promise<{ path: string } | null>
@@ -41,6 +61,9 @@ export interface FilesService {
   trash(target: string): Promise<void>
   addRecent(target: string): void
   assertAllowed(target: string): string
+  listRecent(): RecentFile[]
+  openRecent(target: string): { path: string; content?: string }
+  forget(target?: string): void
 }
 
 export function createFilesService(
@@ -76,9 +99,7 @@ export function createFilesService(
       const result = await dialogs.showOpenDialog({ properties: ['openFile'] })
       if (result.canceled || !result.filePaths[0]) return null
       const filePath = remember(result.filePaths[0])
-      const size = statSync(filePath).size
-      if (size > MAX_TEXT_BYTES) return { path: filePath }
-      return { path: filePath, content: readFileSync(filePath, 'utf8') }
+      return readIfText(filePath)
     },
     async save(content: string) {
       const result = await dialogs.showSaveDialog({})
@@ -97,6 +118,33 @@ export function createFilesService(
     addRecent(target: string) {
       insertRecent(assertAllowed(target))
     },
-    assertAllowed
+    assertAllowed,
+    listRecent() {
+      const rows = db
+        .prepare('SELECT id, path, opened_at FROM recent_files ORDER BY opened_at DESC')
+        .all() as Array<{ id: number; path: string; opened_at: number }>
+      return rows
+        .filter((row) => existsSync(row.path))
+        .map((row) => ({ id: row.id, path: row.path, openedAt: row.opened_at }))
+        .slice(0, RECENT_FILE_LIMIT)
+    },
+    openRecent(target: string) {
+      const filePath = resolve(target)
+      if (!existsSync(filePath)) {
+        db.prepare('DELETE FROM recent_files WHERE path = ?').run(filePath)
+        throw notFoundError('E_NOT_FOUND: Recent file is missing')
+      }
+      allowlist.add(filePath)
+      return readIfText(filePath)
+    },
+    forget(target?: string) {
+      if (target === undefined) {
+        db.prepare('DELETE FROM recent_files').run()
+        return
+      }
+      const filePath = resolve(target)
+      db.prepare('DELETE FROM recent_files WHERE path = ?').run(filePath)
+      allowlist.delete(filePath)
+    }
   }
 }
