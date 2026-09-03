@@ -4,3 +4,7 @@ allowBuilds:
   electron: true
   electron-winstaller: false
   esbuild: true
+
+audit:
+  ignore:
+    - GHSA-jmr9-qjv8-65gv

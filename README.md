@@ -37,7 +37,7 @@ pnpm build:linux
 
 ## 安全
 
-默认 `sandbox`、`contextIsolation`，渲染进程关闭 `nodeIntegration`。页面只能走白名单 IPC。开发态的 `userData` 目录带 `-dev` 后缀，避免和正式包装在一起。
+默认 `sandbox`、`contextIsolation`，渲染进程关闭 `nodeIntegration`。页面只能走白名单 IPC。开发态的 `userData` 目录带 `-dev` 后缀，避免和正式包装在一起。忽略 CVE-2026-56876（extract-zip 经 electron 引入，尚无修复版本）。
 
 ## 协议
 
