@@ -12,6 +12,7 @@ import WindowLabView from '../views/WindowLabView.vue'
 import WindowChromeView from '../views/WindowChromeView.vue'
 import WindowPortsView from '../views/WindowPortsView.vue'
 import PortChildView from '../views/PortChildView.vue'
+import BrowserView from '../views/BrowserView.vue'
 
 const children = routeGroups.flatMap((group) =>
   group.items.map((item) => {
@@ -41,6 +42,9 @@ const children = routeGroups.flatMap((group) =>
     }
     if (item.path === '/windows/ports') {
       return { path: item.path, component: WindowPortsView }
+    }
+    if (item.path === '/browser') {
+      return { path: item.path, component: BrowserView }
     }
     return { path: item.path, component: PlaceholderView }
   })

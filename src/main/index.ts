@@ -5,6 +5,7 @@ import { ensureAppDirs } from './services/paths'
 import { openDatabase, closeDatabase } from './services/db'
 import { createTray, destroyTray } from './services/tray'
 import { registerShortcuts } from './services/shortcuts'
+import { watchBrowserRoute } from './ipc/browser'
 import { createMainWindow, getMainWindow, setAppQuitting } from './windows/main'
 import { registerIpc } from './ipc/register'
 
@@ -47,12 +48,14 @@ app.whenReady().then(() => {
   }
 
   registerIpc()
-  createMainWindow()
+  watchBrowserRoute(createMainWindow())
   createTray()
   registerShortcuts()
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
+    if (BrowserWindow.getAllWindows().length === 0) {
+      watchBrowserRoute(createMainWindow())
+    }
   })
 })
 
