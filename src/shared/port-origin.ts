@@ -11,3 +11,7 @@ export function isTrustedPortMessageOrigin(
   if (eventOrigin === '*' || locationOrigin === '*') return false
   return eventOrigin === portMessageTargetOrigin(locationOrigin)
 }
+
+export function shouldAcceptLabPortMessage(data: unknown, portsLength: number): boolean {
+  return data === 'port' && portsLength > 0
+}

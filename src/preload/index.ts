@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { eventChannels, invokeChannels, type EventChannel, type InvokeChannel } from '../shared/ipc'
-import { isTrustedPortMessageOrigin, portMessageTargetOrigin } from '../shared/port-origin'
+import { isTrustedPortMessageOrigin, portMessageTargetOrigin, shouldAcceptLabPortMessage } from '../shared/port-origin'
 
 contextBridge.exposeInMainWorld('api', {
   invoke(channel: string, ...args: unknown[]) {
@@ -23,7 +23,7 @@ contextBridge.exposeInMainWorld('api', {
 
 window.addEventListener('message', (event) => {
   if (!isTrustedPortMessageOrigin(event.origin, window.location.origin)) return
-  if (event.data !== 'port') return
+  if (!shouldAcceptLabPortMessage(event.data, event.ports.length)) return
   const port = event.ports[0]
   port.onmessage = (msg) => {
     window.dispatchEvent(new CustomEvent('lab-port', { detail: msg.data }))

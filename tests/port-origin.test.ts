@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   isTrustedPortMessageOrigin,
-  portMessageTargetOrigin
+  portMessageTargetOrigin,
+  shouldAcceptLabPortMessage
 } from '../src/shared/port-origin'
 
 describe('portMessageTargetOrigin', () => {
@@ -40,5 +41,18 @@ describe('isTrustedPortMessageOrigin', () => {
   it('rejects mismatched origins', () => {
     expect(isTrustedPortMessageOrigin('http://evil.test', locationOrigin)).toBe(false)
     expect(isTrustedPortMessageOrigin('http://localhost:9999', locationOrigin)).toBe(false)
+  })
+})
+
+describe('shouldAcceptLabPortMessage', () => {
+  it('accepts port data when a port exists', () => {
+    expect(shouldAcceptLabPortMessage('port', 1)).toBe(true)
+    expect(shouldAcceptLabPortMessage('port', 2)).toBe(true)
+  })
+
+  it('rejects missing ports or other data', () => {
+    expect(shouldAcceptLabPortMessage('port', 0)).toBe(false)
+    expect(shouldAcceptLabPortMessage('ready', 1)).toBe(false)
+    expect(shouldAcceptLabPortMessage(undefined, 1)).toBe(false)
   })
 })
