@@ -13,7 +13,7 @@ watch(
     if (typeof raw !== 'string' || raw === '') return
     const noteId = Number(raw)
     if (!Number.isInteger(noteId) || noteId <= 0) return
-    void open(noteId)
+    void open(noteId).then(() => refresh())
   },
   { immediate: true }
 )

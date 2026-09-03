@@ -3,14 +3,16 @@ import { readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { parseDeepLink, type DeepLink } from '../../shared/deep-link'
 import { getMainWindow } from '../windows/main'
+import { processAssociatedFileContent } from './associated-file'
 import { patchSettings } from './conf'
 import { createSafeStorage } from './crypto'
 import { getDatabase } from './db'
-import { MAX_TEXT_BYTES, rememberOpened } from './files'
+import { rememberOpened } from './files'
 import { createNotesService } from './notes'
-import { isMarkdownPath, noteTitleFromMarkdownPath, PROTOCOL } from './protocol-url'
+import { PROTOCOL } from './protocol-url'
 
 export {
+  extractFileFromArgv,
   extractUrlFromArgv,
   isMarkdownPath,
   noteTitleFromMarkdownPath,
@@ -92,19 +94,20 @@ function sendDeepLink(payload: DeepLink): void {
 }
 
 function processAssociatedFile(filePath: string): void {
-  const abs = resolve(filePath)
   const db = getDatabase()
-  rememberOpened(db, abs)
+  const notes = createNotesService(db, createSafeStorage())
+  const result = processAssociatedFileContent(filePath, {
+    remember: (absPath) => rememberOpened(db, absPath),
+    fs: {
+      statSize: (target) => statSync(target).size,
+      readText: (target) => readFileSync(target, 'utf8')
+    },
+    notes
+  })
 
-  if (isMarkdownPath(abs)) {
-    const size = statSync(abs).size
-    if (size <= MAX_TEXT_BYTES) {
-      const body = readFileSync(abs, 'utf8')
-      const title = noteTitleFromMarkdownPath(abs)
-      const note = createNotesService(db, createSafeStorage()).create({ title, body })
-      handleDeepLinkUrl(`${PROTOCOL}://note/${note.id}`)
-      return
-    }
+  if (result.kind === 'note') {
+    handleDeepLinkUrl(`${PROTOCOL}://note/${result.id}`)
+    return
   }
 
   patchSettings({ ui: { lastRoute: '/workbench/files' } })

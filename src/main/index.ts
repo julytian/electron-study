@@ -9,6 +9,7 @@ import { watchBrowserRoute } from './ipc/browser'
 import { createMainWindow, getMainWindow, setAppQuitting } from './windows/main'
 import { registerIpc } from './ipc/register'
 import {
+  extractFileFromArgv,
   extractUrlFromArgv,
   flushDeepLinkQueue,
   flushPendingOpenFiles,
@@ -28,8 +29,7 @@ if (!gotLock) {
       win.show()
       win.focus()
     }
-    const url = extractUrlFromArgv(argv)
-    if (url) handleDeepLinkUrl(url)
+    handleIncomingArgv(argv)
   })
 }
 
@@ -72,8 +72,7 @@ app.whenReady().then(() => {
   registerProtocol()
   watchBrowserRoute(createMainWindow())
   flushPendingOpenFiles()
-  const startupUrl = extractUrlFromArgv(process.argv)
-  if (startupUrl) handleDeepLinkUrl(startupUrl)
+  handleIncomingArgv(process.argv)
   flushDeepLinkQueue()
   createTray()
   registerShortcuts()
@@ -85,6 +84,13 @@ app.whenReady().then(() => {
     }
   })
 })
+
+function handleIncomingArgv(argv: string[]): void {
+  const url = extractUrlFromArgv(argv)
+  if (url) handleDeepLinkUrl(url)
+  const filePath = extractFileFromArgv(argv)
+  if (filePath) handleOpenFile(filePath)
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()

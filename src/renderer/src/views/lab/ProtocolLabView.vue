@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import { Modal } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
 import { invokeIpc } from '../../composables/useIpc'
 import { useAppStore } from '../../stores/app'
 
@@ -22,8 +22,12 @@ async function confirmRegister(): Promise<void> {
 async function registerProtocol(): Promise<void> {
   registering.value = true
   try {
-    await invokeIpc('protocol:register')
-    store.settings.protocol.registered = true
+    const data = await invokeIpc('protocol:register')
+    if (data.ok) {
+      store.settings.protocol.registered = true
+      return
+    }
+    message.error('协议注册失败，当前环境可能无法设为默认打开方式')
   } catch {
     // invokeIpc 已 toast
   } finally {
@@ -78,7 +82,9 @@ async function registerProtocol(): Promise<void> {
               {{ macDevCommand }}
             </a-typography-text>
             <a-typography-paragraph type="secondary" class="protocol-lab-hint">
-              先保证本应用已在跑，并至少有 id 为 1 的笔记。Windows 二次实例会把同一 URL 放进 argv。
+              先保证本应用已在跑，并至少有 id 为 1 的笔记。Windows / Linux 二次实例会把协议 URL 或
+              <a-typography-text code>.md</a-typography-text>
+              路径放进 argv。
             </a-typography-paragraph>
           </a-form-item>
         </a-form>

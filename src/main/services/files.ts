@@ -5,9 +5,13 @@ import { assertWithinRoot } from './path-jail'
 
 export const MAX_TEXT_BYTES = 2 * 1024 * 1024
 
+export function insertRecentFile(db: Database.Database, filePath: string): void {
+  db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run(filePath, Date.now())
+}
+
 export function rememberOpened(db: Database.Database, absPath: string): string {
   const resolved = resolve(absPath)
-  db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run(resolved, Date.now())
+  insertRecentFile(db, resolved)
   return resolved
 }
 
@@ -47,7 +51,7 @@ export function createFilesService(
   allowlist: Set<string> = new Set()
 ): FilesService {
   function insertRecent(filePath: string): void {
-    db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run(filePath, Date.now())
+    insertRecentFile(db, filePath)
   }
 
   function remember(filePath: string): string {
