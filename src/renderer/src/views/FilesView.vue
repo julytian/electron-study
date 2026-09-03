@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue'
 import { useFiles } from '../composables/useFiles'
+
+const OPEN_RECENT_KEY = 'electron-lab:open-recent'
+const OPEN_RECENT_EVENT = 'electron-lab:open-recent'
 
 const {
   path,
@@ -15,6 +19,23 @@ const {
   openRecent,
   forget
 } = useFiles()
+
+async function consumePendingRecent(): Promise<void> {
+  const pending = sessionStorage.getItem(OPEN_RECENT_KEY)
+  if (pending) {
+    sessionStorage.removeItem(OPEN_RECENT_KEY)
+    await openRecent(pending)
+  }
+}
+
+onMounted(() => {
+  void consumePendingRecent()
+  window.addEventListener(OPEN_RECENT_EVENT, consumePendingRecent)
+})
+
+onUnmounted(() => {
+  window.removeEventListener(OPEN_RECENT_EVENT, consumePendingRecent)
+})
 
 function formatOpenedAt(openedAt: number): string {
   return new Date(openedAt).toLocaleString()
