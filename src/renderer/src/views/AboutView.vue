@@ -32,6 +32,10 @@ async function openLogs(): Promise<void> {
   await invokeIpc('shell:open-logs')
 }
 
+async function openRepo(): Promise<void> {
+  await invokeIpc('shell:open-external', 'https://github.com/julytian/electron-study')
+}
+
 async function check(): Promise<void> {
   checking.value = true
   try {
@@ -82,6 +86,9 @@ async function install(): Promise<void> {
       <a-descriptions-item label="Chromium">{{ store.info?.chrome }}</a-descriptions-item>
       <a-descriptions-item label="Node">{{ store.info?.node }}</a-descriptions-item>
       <a-descriptions-item label="userData">{{ store.info?.userData }}</a-descriptions-item>
+      <a-descriptions-item label="仓库">
+        <a-button type="link" style="padding: 0" @click="openRepo">打开仓库</a-button>
+      </a-descriptions-item>
       <a-descriptions-item label="更新">
         {{ statusText }}（{{ store.updaterStatus }}）
         <template v-if="store.updaterVersion"> · {{ store.updaterVersion }}</template>
@@ -93,7 +100,7 @@ async function install(): Promise<void> {
       type="info"
       show-icon
       message="发布与签名"
-      description="macOS 公证和 Windows 签名需要证书。本仓库 electron-builder 的 notarize 为 false，没有证书就不做签名或公证。"
+      description="macOS 公证和 Windows 签名需要证书。本仓库 electron-builder 的 notarize 为 false，没有证书就不做签名或公证。未签名的安装包需要在系统设置里手动允许打开。"
     />
     <a-alert
       v-if="store.updaterStatus === 'error' && store.updaterMessage"
