@@ -12,6 +12,9 @@ files:
 asarUnpack:
   - resources/**
   - node_modules/better-sqlite3/**
+fileAssociations:
+  - ext: md
+    name: Markdown
 win:
   executableName: ElectronLab
 nsis:

@@ -5,6 +5,12 @@ import { assertWithinRoot } from './path-jail'
 
 export const MAX_TEXT_BYTES = 2 * 1024 * 1024
 
+export function rememberOpened(db: Database.Database, absPath: string): string {
+  const resolved = resolve(absPath)
+  db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run(resolved, Date.now())
+  return resolved
+}
+
 export interface DialogLike {
   showOpenDialog(options?: {
     properties?: Array<'openFile' | 'openDirectory' | 'multiSelections'>

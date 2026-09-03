@@ -1,7 +1,22 @@
 <script setup lang="ts">
+import { watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useNotes } from '../composables/useNotes'
 
+const route = useRoute()
 const { notes, current, keyword, refresh, open, create, save, remove } = useNotes()
+
+watch(
+  () => route.query.id,
+  (id) => {
+    const raw = Array.isArray(id) ? id[0] : id
+    if (typeof raw !== 'string' || raw === '') return
+    const noteId = Number(raw)
+    if (!Number.isInteger(noteId) || noteId <= 0) return
+    void open(noteId)
+  },
+  { immediate: true }
+)
 
 async function onRemove(): Promise<void> {
   if (!current.value) return

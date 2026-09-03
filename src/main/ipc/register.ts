@@ -4,6 +4,7 @@ import { registerClipboardIpc } from './clipboard'
 import { registerDownloadsIpc } from './downloads'
 import { registerFilesIpc } from './files'
 import { registerNotesIpc } from './notes'
+import { registerProtocolIpc } from './protocol'
 import { registerSystemIpc } from './system'
 import { registerWindowsIpc } from './windows'
 
@@ -16,4 +17,5 @@ export function registerIpc(): void {
   registerSystemIpc()
   registerWindowsIpc()
   registerBrowserIpc()
+  registerProtocolIpc()
 }

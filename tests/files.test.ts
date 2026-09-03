@@ -4,7 +4,12 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import Database from 'better-sqlite3'
 import { migrate } from '../src/main/services/db/migrations'
-import { createFilesService, type DialogLike, type FileShellLike } from '../src/main/services/files'
+import {
+  createFilesService,
+  rememberOpened,
+  type DialogLike,
+  type FileShellLike
+} from '../src/main/services/files'
 
 function memoryDb(): Database.Database {
   const db = new Database(':memory:')
@@ -141,6 +146,19 @@ describe('files service', () => {
     expect(() => service.assertAllowed(outsider)).toThrowError(/E_PATH/)
     expect(() => service.showInFolder(outsider)).toThrowError(/E_PATH/)
     expect(() => service.addRecent(outsider)).toThrowError(/E_PATH/)
+  })
+
+  it('remembers OS-opened paths without the userData jail', () => {
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const outsider = join(tmpdir(), `elab-os-open-${Date.now()}.md`)
+    writeFileSync(outsider, '# hello')
+    const db = memoryDb()
+
+    expect(rememberOpened(db, outsider)).toBe(resolve(outsider))
+    expect(recentPaths(db)).toEqual([resolve(outsider)])
+    expect(() =>
+      createFilesService(db, userData, stubDialogs({}), stubShell()).addRecent(outsider)
+    ).toThrowError(/E_PATH/)
   })
 
   it('adds allowlisted or userData paths to recent_files', async () => {

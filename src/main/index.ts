@@ -8,19 +8,40 @@ import { registerShortcuts } from './services/shortcuts'
 import { watchBrowserRoute } from './ipc/browser'
 import { createMainWindow, getMainWindow, setAppQuitting } from './windows/main'
 import { registerIpc } from './ipc/register'
+import {
+  extractUrlFromArgv,
+  flushDeepLinkQueue,
+  flushPendingOpenFiles,
+  handleDeepLinkUrl,
+  handleOpenFile,
+  registerProtocol
+} from './services/protocol'
 
 const gotLock = app.requestSingleInstanceLock()
 if (!gotLock) {
   app.quit()
 } else {
-  app.on('second-instance', () => {
+  app.on('second-instance', (_event, argv) => {
     const win = getMainWindow()
-    if (!win) return
-    if (win.isMinimized()) win.restore()
-    win.show()
-    win.focus()
+    if (win) {
+      if (win.isMinimized()) win.restore()
+      win.show()
+      win.focus()
+    }
+    const url = extractUrlFromArgv(argv)
+    if (url) handleDeepLinkUrl(url)
   })
 }
+
+app.on('open-url', (event, url) => {
+  event.preventDefault()
+  handleDeepLinkUrl(url)
+})
+
+app.on('open-file', (event, filePath) => {
+  event.preventDefault()
+  handleOpenFile(filePath)
+})
 
 app.whenReady().then(() => {
   if (!gotLock) return
@@ -48,13 +69,19 @@ app.whenReady().then(() => {
   }
 
   registerIpc()
+  registerProtocol()
   watchBrowserRoute(createMainWindow())
+  flushPendingOpenFiles()
+  const startupUrl = extractUrlFromArgv(process.argv)
+  if (startupUrl) handleDeepLinkUrl(startupUrl)
+  flushDeepLinkQueue()
   createTray()
   registerShortcuts()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       watchBrowserRoute(createMainWindow())
+      flushDeepLinkQueue()
     }
   })
 })

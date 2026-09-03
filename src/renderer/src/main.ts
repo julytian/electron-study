@@ -20,3 +20,9 @@ app.use(createPinia())
 app.use(router)
 app.use(Antd)
 app.mount('#app')
+
+window.api.on('deep-link:open', (payload) => {
+  if (payload.kind === 'note') {
+    void router.push(`/workbench/notes?id=${payload.id}`)
+  }
+})
