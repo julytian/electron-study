@@ -12,6 +12,7 @@ interface MetricRow {
 
 const rows = ref<MetricRow[]>([])
 const crashInfo = shallowRef('')
+const processEvents = shallowRef('')
 const loading = shallowRef(false)
 
 const columns: TableColumnType<MetricRow>[] = [
@@ -35,6 +36,8 @@ async function refresh(): Promise<void> {
     rows.value = await invokeIpc('metrics:get')
     const dumps = await invokeIpc('lab:run', 'advanced', 'crash-dumps')
     crashInfo.value = dumps.message
+    const gone = await invokeIpc('lab:run', 'metrics', 'recent-gone')
+    processEvents.value = gone.message
   } catch {
     // invokeIpc 已 toast
   } finally {
@@ -72,6 +75,11 @@ onMounted(() => {
     <a-card title="崩溃转储">
       <a-typography-paragraph>
         {{ crashInfo || '尚未读取 crashDumps 目录。' }}
+      </a-typography-paragraph>
+    </a-card>
+    <a-card title="进程事件">
+      <a-typography-paragraph>
+        {{ processEvents || '暂无进程事件' }}
       </a-typography-paragraph>
     </a-card>
   </a-space>
