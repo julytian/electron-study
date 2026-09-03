@@ -1,4 +1,6 @@
-import { session } from 'electron'
+import { app, session } from 'electron'
+import { is } from '@electron-toolkit/utils'
+import { attachSessionSecurity } from './session-security'
 import {
   BROWSER_PARTITION,
   REQUEST_FILTER_URLS,
@@ -13,8 +15,9 @@ let allowInsecureCerts = false
 export function getBrowserSession(): Electron.Session {
   if (browserSession) return browserSession
   const ses = session.fromPartition(BROWSER_PARTITION)
-  ses.setPermissionRequestHandler((_webContents, _permission, callback) => {
-    callback(false)
+  attachSessionSecurity(ses, 'browser', {
+    packaged: app.isPackaged,
+    isDev: is.dev
   })
   ses.setCertificateVerifyProc((_request, callback) => {
     callback(certificateVerifyVerdict(allowInsecureCerts))

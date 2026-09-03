@@ -1,5 +1,5 @@
 import { app, BrowserWindow, crashReporter, session } from 'electron'
-import { electronApp, optimizer } from '@electron-toolkit/utils'
+import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { setupLogger } from './services/logger'
 import { ensureAppDirs } from './services/paths'
 import { openDatabase, closeDatabase } from './services/db'
@@ -10,7 +10,7 @@ import { registerShortcuts } from './services/shortcuts'
 import { watchBrowserRoute } from './ipc/browser'
 import { createMainWindow, getMainWindow, setAppQuitting } from './windows/main'
 import { registerIpc } from './ipc/register'
-import { isDefaultSessionPermissionAllowed } from './services/session-permissions'
+import { attachSessionSecurity } from './services/session-security'
 import { refreshDockMenu } from './platforms/mac'
 import { refreshWindowsJumpList } from './platforms/win'
 import { purgeMissingRecentFiles, rebuildSystemRecentDocuments } from './services/recent-documents'
@@ -71,8 +71,9 @@ app.whenReady().then(() => {
   })
 
   electronApp.setAppUserModelId('com.electronlab.app')
-  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
-    callback(isDefaultSessionPermissionAllowed(permission))
+  attachSessionSecurity(session.defaultSession, 'app', {
+    packaged: app.isPackaged,
+    isDev: is.dev
   })
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
