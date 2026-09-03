@@ -12,9 +12,17 @@ const protocolRegistered = computed(() => store.settings.protocol.registered)
 const shortcutDraft = reactive({ ...store.settings.shortcuts })
 
 async function onTheme(theme: 'system' | 'light' | 'dark'): Promise<void> {
-  await store.saveSettings({
-    appearance: { ...store.settings.appearance, theme }
-  })
+  await invokeIpc('system:set-theme', theme)
+  store.settings = await invokeIpc('conf:get')
+}
+
+async function onLogin(enabled: boolean): Promise<void> {
+  try {
+    await invokeIpc('system:set-login', enabled)
+  } catch {
+    // invokeIpc 已 toast E_PLATFORM
+  }
+  store.settings = await invokeIpc('conf:get')
 }
 
 async function onCloseToTray(checked: boolean): Promise<void> {
@@ -119,6 +127,9 @@ async function clearDb(): Promise<void> {
                 : '打开后，关闭主窗口会隐藏到托盘，不会退出。'
             }}
           </a-typography-paragraph>
+        </a-form-item>
+        <a-form-item label="开机自启">
+          <a-switch :checked="store.settings.behavior.openAtLogin" @change="onLogin" />
         </a-form-item>
       </a-form>
     </a-card>

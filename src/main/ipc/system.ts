@@ -47,4 +47,18 @@ export function registerSystemIpc(): void {
     patchSettings({ behavior: { ...getSettings().behavior, openAtLogin: enabled } })
     return ipcOk(null)
   })
+
+  nativeTheme.on('updated', () => {
+    const win = getMainWindow()
+    if (!win || win.isDestroyed()) return
+    win.webContents.send('theme:changed', { theme: nativeTheme.themeSource as ThemeMode })
+  })
+
+  const sendPower = (): void => {
+    const win = getMainWindow()
+    if (!win || win.isDestroyed()) return
+    win.webContents.send('power:changed', { onBattery: powerMonitor.isOnBatteryPower() })
+  }
+  powerMonitor.on('on-ac', sendPower)
+  powerMonitor.on('on-battery', sendPower)
 }
