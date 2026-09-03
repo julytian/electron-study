@@ -5,6 +5,9 @@ import { invokeIpc } from '../composables/useIpc'
 const url = shallowRef('')
 const canBack = shallowRef(false)
 const canForward = shallowRef(false)
+const query = shallowRef('')
+const matchOrdinal = shallowRef(0)
+const matchCount = shallowRef(0)
 
 let offNav: (() => void) | undefined
 
@@ -28,6 +31,31 @@ async function navigate(): Promise<void> {
 async function go(action: 'back' | 'forward' | 'reload'): Promise<void> {
   await invokeIpc('browser:go', action)
 }
+
+async function applyFind(action: 'next' | 'previous' | 'stop'): Promise<void> {
+  try {
+    const result = await invokeIpc('browser:find', query.value, action)
+    matchOrdinal.value = result.activeMatchOrdinal
+    matchCount.value = result.matches
+  } catch {
+    // invokeIpc 已 toast
+  }
+}
+
+async function findNext(): Promise<void> {
+  await applyFind('next')
+}
+
+async function findPrevious(): Promise<void> {
+  await applyFind('previous')
+}
+
+async function onQueryChange(value: string): Promise<void> {
+  query.value = value
+  if (value.trim() === '') {
+    await applyFind('stop')
+  }
+}
 </script>
 
 <template>
@@ -45,6 +73,19 @@ async function go(action: 'back' | 'forward' | 'reload'): Promise<void> {
       />
       <a-button type="primary" @click="navigate">前往</a-button>
     </a-space>
+    <a-space class="browser-toolbar browser-find" :size="8">
+      <a-input
+        :value="query"
+        class="browser-find-input"
+        placeholder="页内查找"
+        allow-clear
+        @update:value="onQueryChange"
+        @press-enter="findNext"
+      />
+      <a-button @click="findPrevious">上一个</a-button>
+      <a-button @click="findNext">下一个</a-button>
+      <span class="browser-find-count">{{ matchOrdinal }} / {{ matchCount }}</span>
+    </a-space>
   </div>
 </template>
 
@@ -57,8 +98,21 @@ async function go(action: 'back' | 'forward' | 'reload'): Promise<void> {
   width: 100%;
 }
 
+.browser-find {
+  margin-top: 8px;
+}
+
 .browser-url {
   min-width: 280px;
   flex: 1;
+}
+
+.browser-find-input {
+  min-width: 200px;
+}
+
+.browser-find-count {
+  color: rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
 }
 </style>
