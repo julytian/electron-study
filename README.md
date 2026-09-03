@@ -35,7 +35,7 @@ CI 在检查通过后会打一份未签名的 Linux AppImage，制品挂在该�
 
 ## 更新
 
-正式包会检查 GitHub Releases。仓库里还没有 Release 时，检查会失败并 toast，不会退出。开发态不请求 GitHub，只用 mock。
+正式包会检查 GitHub Releases。首个版本见 [v1.0.0](https://github.com/julytian/electron-lab/releases/tag/v1.0.0)。开发态不请求 GitHub，只用 mock。
 
 ## 安全
 
