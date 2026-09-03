@@ -42,18 +42,10 @@ export interface NotesService {
 
 export function createNotesService(db: Database.Database, crypto: SafeStorageLike): NotesService {
   function encodeCipher(plain: string): string {
-    const blob = crypto.encryptString(plain)
-    const asText = blob.toString()
-    if (asText.startsWith('enc:') && Buffer.from(asText).equals(blob)) {
-      return asText
-    }
-    return blob.toString('base64')
+    return crypto.encryptString(plain).toString('base64')
   }
 
   function decodeCipher(stored: string): string {
-    if (stored.startsWith('enc:')) {
-      return crypto.decryptString(Buffer.from(stored))
-    }
     return crypto.decryptString(Buffer.from(stored, 'base64'))
   }
 

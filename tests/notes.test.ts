@@ -35,7 +35,8 @@ describe('notes service', () => {
       body_cipher: string | null
     }
     expect(row.body).toBeNull()
-    expect(row.body_cipher).toContain('enc:')
+    expect(row.body_cipher).toBeTruthy()
+    expect(Buffer.from(row.body_cipher ?? '', 'base64').toString('utf8')).toContain('enc:')
     expect(notes.get(created.id).body).toBe('secret')
   })
 })
