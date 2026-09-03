@@ -1,7 +1,7 @@
 export function existingRecentPaths(
   rows: Array<{ path: string }>,
   exists: (p: string) => boolean,
-  limit = 5
+  limit = 15
 ): string[] {
   const seen = new Set<string>()
   const result: string[] = []
