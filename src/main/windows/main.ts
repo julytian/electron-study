@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import { is } from '@electron-toolkit/utils'
 import { getSettings, patchSettings } from '../services/conf'
+import { notifyMainWindowCreated } from '../services/process-recovery'
 import { closeAllChildren } from './child'
 import { attachRendererNavigation } from './navigation'
 import { attachWindowSecurity } from './window-security'
@@ -123,6 +124,7 @@ export function createMainWindow(hash?: string): BrowserWindow {
   attachRendererNavigation(mainWindow)
   attachWindowSecurity(mainWindow, app.isPackaged)
   loadMainWindow(mainWindow, hash)
+  notifyMainWindowCreated()
 
   return mainWindow
 }

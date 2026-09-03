@@ -23,6 +23,11 @@ function hookMainLoadReset(): void {
   })
 }
 
+export function notifyMainWindowCreated(): void {
+  consecutiveReloads = 0
+  hookMainLoadReset()
+}
+
 export function attachProcessRecovery(): void {
   if (attached) return
   attached = true
@@ -65,15 +70,12 @@ export function attachProcessRecovery(): void {
   })
 
   app.on('child-process-gone', (_event, details) => {
-    recordLabEvent(
-      'process',
-      'child-process-gone',
-      false,
-      formatChildProcessGoneMessage({
-        type: details.type || 'unknown',
-        reason: details.reason || 'unknown',
-        exitCode: details.exitCode ?? 'unknown'
-      })
-    )
+    const message = formatChildProcessGoneMessage({
+      type: details.type || 'unknown',
+      reason: details.reason || 'unknown',
+      exitCode: details.exitCode ?? 'unknown'
+    })
+    log.warn(message)
+    recordLabEvent('process', 'child-process-gone', false, message)
   })
 }
