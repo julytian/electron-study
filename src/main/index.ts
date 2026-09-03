@@ -3,7 +3,9 @@ import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { setupLogger } from './services/logger'
 import { ensureAppDirs } from './services/paths'
 import { openDatabase, closeDatabase } from './services/db'
-import { createMainWindow, getMainWindow } from './windows/main'
+import { createTray, destroyTray } from './services/tray'
+import { registerShortcuts } from './services/shortcuts'
+import { createMainWindow, getMainWindow, setAppQuitting } from './windows/main'
 import { registerIpc } from './ipc/register'
 
 const gotLock = app.requestSingleInstanceLock()
@@ -46,6 +48,8 @@ app.whenReady().then(() => {
 
   registerIpc()
   createMainWindow()
+  createTray()
+  registerShortcuts()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
@@ -57,5 +61,7 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', () => {
+  setAppQuitting()
+  destroyTray()
   closeDatabase()
 })

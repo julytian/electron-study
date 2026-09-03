@@ -7,6 +7,7 @@ import AboutView from '../views/AboutView.vue'
 import NotesView from '../views/NotesView.vue'
 import ClipboardView from '../views/ClipboardView.vue'
 import FilesView from '../views/FilesView.vue'
+import SystemView from '../views/SystemView.vue'
 
 const children = routeGroups.flatMap((group) =>
   group.items.map((item) => {
@@ -24,6 +25,9 @@ const children = routeGroups.flatMap((group) =>
     }
     if (item.path === '/workbench/files') {
       return { path: item.path, component: FilesView }
+    }
+    if (item.path === '/workbench/system') {
+      return { path: item.path, component: SystemView }
     }
     return { path: item.path, component: PlaceholderView }
   })
