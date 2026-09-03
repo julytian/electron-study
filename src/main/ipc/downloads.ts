@@ -1,4 +1,4 @@
-import { desktopCapturer, ipcMain, session } from 'electron'
+import { desktopCapturer, ipcMain } from 'electron'
 import { errorCodes, ipcError, ipcOk, type IpcResult } from '../../shared/ipc-result'
 import {
   bufferFromDataUrl,
@@ -33,7 +33,7 @@ function getDownloads(): DownloadsService {
     downloads = createDownloadsService({
       db: getDatabase(),
       downloadsDir: ensureAppDirs().exportsDir,
-      downloadURL: (url) => session.defaultSession.downloadURL(url),
+      downloadURL: (url) => getBrowserSession().downloadURL(url),
       sendUpdated: (record) => {
         const win = getMainWindow()
         if (!win || win.isDestroyed()) return
@@ -47,11 +47,9 @@ function getDownloads(): DownloadsService {
 function listenWillDownload(): void {
   if (listening) return
   listening = true
-  const onDownload = (_event: Electron.Event, item: Electron.DownloadItem): void => {
+  getBrowserSession().on('will-download', (_event, item) => {
     getDownloads().handleWillDownload(item)
-  }
-  session.defaultSession.on('will-download', onDownload)
-  getBrowserSession().on('will-download', onDownload)
+  })
 }
 
 export function registerDownloadsIpc(): void {

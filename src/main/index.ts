@@ -11,6 +11,7 @@ import { registerShortcuts } from './services/shortcuts'
 import { watchBrowserRoute } from './ipc/browser'
 import { createMainWindow, getMainWindow, setAppQuitting } from './windows/main'
 import { registerIpc } from './ipc/register'
+import { attachProcessRecovery } from './services/process-recovery'
 import { attachSessionSecurity } from './services/session-security'
 import { refreshDockMenu } from './platforms/mac'
 import { refreshWindowsJumpList } from './platforms/win'
@@ -27,6 +28,7 @@ import {
 
 let autoCheckTimer: ReturnType<typeof setTimeout> | undefined
 
+app.enableSandbox()
 const gotLock = app.requestSingleInstanceLock()
 if (!gotLock) {
   app.quit()
@@ -124,6 +126,7 @@ app.whenReady().then(() => {
   rebuildSystemRecentDocuments()
 
   registerIpc()
+  attachProcessRecovery()
   registerProtocol()
   watchBrowserRoute(createMainWindow())
   try {

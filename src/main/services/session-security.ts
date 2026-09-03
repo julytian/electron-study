@@ -1,6 +1,10 @@
 import { app, shell, type Session } from 'electron'
 import { isAllowedExternalUrl } from '../../shared/external-url'
 import { cspHeader, shouldAttachCsp } from '../../shared/csp'
+import {
+  permissionsPolicyHeader,
+  shouldAttachPermissionsPolicy
+} from '../../shared/permissions-policy'
 import { isSessionPermissionAllowed, type SessionSecurityKind } from './session-permissions'
 import { isRendererNavigationAllowed } from '../windows/window-policy'
 
@@ -27,6 +31,21 @@ function ensureWebContentsHook(): void {
   })
 }
 
+function attachDeniedDeviceHandlers(ses: Session): void {
+  try {
+    ses.setDisplayMediaRequestHandler((_request, callback) => {
+      callback({})
+    })
+  } catch (error) {
+    console.error(error)
+  }
+  try {
+    ses.setDevicePermissionHandler(() => false)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 export function attachSessionSecurity(
   ses: Session,
   kind: SessionSecurityKind,
@@ -41,15 +60,24 @@ export function attachSessionSecurity(
   ses.setPermissionCheckHandler((_webContents, permission) => {
     return isSessionPermissionAllowed(kind, permission)
   })
+  attachDeniedDeviceHandlers(ses)
 
-  if (shouldAttachCsp(kind, options.packaged)) {
+  const attachHeaders =
+    shouldAttachCsp(kind, options.packaged) ||
+    shouldAttachPermissionsPolicy(kind, options.packaged)
+  if (attachHeaders) {
     ses.webRequest.onHeadersReceived((details, callback) => {
       if (details.resourceType !== 'mainFrame' && details.resourceType !== 'subFrame') {
         callback({})
         return
       }
       const headers = { ...(details.responseHeaders ?? {}) }
-      headers['Content-Security-Policy'] = [cspHeader()]
+      if (shouldAttachCsp(kind, options.packaged)) {
+        headers['Content-Security-Policy'] = [cspHeader()]
+      }
+      if (shouldAttachPermissionsPolicy(kind, options.packaged)) {
+        headers['Permissions-Policy'] = [permissionsPolicyHeader()]
+      }
       callback({ responseHeaders: headers })
     })
   }

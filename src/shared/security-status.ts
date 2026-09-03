@@ -5,7 +5,10 @@ export function formatSecurityStatus(packaged: boolean): string {
     `packaged=${packaged}`,
     `cspSession=${packaged}`,
     'permissionCheck=true',
-    ...Object.entries(ELECTRON_FUSES).map(([key, value]) => `fuses.${key}=${value}`)
+    ...Object.entries(ELECTRON_FUSES).map(([key, value]) => `fuses.${key}=${value}`),
+    'enableSandbox=true',
+    'displayMedia=deny',
+    'devicePermission=deny'
   ]
   return parts.join('; ')
 }

@@ -46,12 +46,31 @@ export const SECURITY_CHECKLIST: SecurityChecklistRow[] = [
     id: 'csp',
     title: 'CSP meta 与正式包响应头',
     file: 'src/renderer/index.html',
-    detail: '开发态靠 meta；正式包再给 defaultSession 加同一条响应头。'
+    detail:
+      '开发态靠 meta；正式包再给 defaultSession 加同一条 CSP 与 Permissions-Policy。含 object-src / base-uri / frame-ancestors。'
   },
   {
     id: 'fuses',
     title: 'Electron Fuses 声明',
     file: 'electron-builder.yml',
     detail: '打包时按声明关闭 runAsNode、只从 asar 加载等。'
+  },
+  {
+    id: 'process-recovery',
+    title: '渲染进程崩溃恢复',
+    file: 'src/main/services/process-recovery.ts',
+    detail: '主窗 render-process-gone 最多 reload 两次；子窗与 GPU 只记实验室事件。'
+  },
+  {
+    id: 'display-media',
+    title: '拒绝页面级屏幕捕获',
+    file: 'src/main/services/session-security.ts',
+    detail: 'setDisplayMediaRequestHandler 空回调拒绝。截屏只走 capture IPC。'
+  },
+  {
+    id: 'device-permission',
+    title: '拒绝 HID / 串口 / USB / 蓝牙',
+    file: 'src/main/services/session-security.ts',
+    detail: 'setDevicePermissionHandler 一律 false。'
   }
 ]

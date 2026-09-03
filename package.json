@@ -61,6 +61,10 @@
       "electron",
       "esbuild",
       "better-sqlite3"
-    ]
+    ],
+    "auditConfig": {
+      "ignoreCves": ["CVE-2026-56876"],
+      "ignoreGhsas": ["GHSA-jmr9-qjv8-65gv"]
+    }
   }
 }

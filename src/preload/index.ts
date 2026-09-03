@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { eventChannels, invokeChannels, type EventChannel, type InvokeChannel } from '../shared/ipc'
+import { isTrustedPortMessageOrigin, portMessageTargetOrigin } from '../shared/port-origin'
 
 contextBridge.exposeInMainWorld('api', {
   invoke(channel: string, ...args: unknown[]) {
@@ -21,6 +22,7 @@ contextBridge.exposeInMainWorld('api', {
 })
 
 window.addEventListener('message', (event) => {
+  if (!isTrustedPortMessageOrigin(event.origin, window.location.origin)) return
   if (event.data !== 'port') return
   const port = event.ports[0]
   port.onmessage = (msg) => {
@@ -32,5 +34,5 @@ window.addEventListener('message', (event) => {
 // webContents.postMessage 走 ipcRenderer；再转到主世界，渲染进程才能用 __labPort
 ipcRenderer.on('port', (event) => {
   if (event.ports.length === 0) return
-  window.postMessage('port', '*', event.ports)
+  window.postMessage('port', portMessageTargetOrigin(window.location.origin), event.ports)
 })

@@ -8,6 +8,7 @@ import { formatSecurityStatus } from '../../shared/security-status'
 import { applyTouchBar, refreshDockMenu } from '../platforms/mac'
 import { refreshWindowsJumpList } from '../platforms/win'
 import { getDatabase } from '../services/db'
+import { listLabEvents, recordLabEvent, recentProcessEventsMessage } from '../services/lab-events'
 import { ensureAppDirs } from '../services/paths'
 import { getSettings } from '../services/conf'
 import { getUpdaterMachine } from '../services/updater'
@@ -20,18 +21,6 @@ const MOCK_ACTIONS: Record<string, UpdaterStatus> = {
   'mock-downloading': 'downloading',
   'mock-downloaded': 'downloaded',
   'mock-error': 'error'
-}
-
-function recordLabEvent(module: string, action: string, ok: boolean, message: string): void {
-  try {
-    getDatabase()
-      .prepare(
-        'INSERT INTO lab_events (module, action, ok, message, created_at) VALUES (?, ?, ?, ?, ?)'
-      )
-      .run(module, action, ok ? 1 : 0, message, Date.now())
-  } catch {
-    // 记录失败不影响实验室动作本身
-  }
 }
 
 function mapLabError(error: unknown): ReturnType<typeof ipcError> {
@@ -176,8 +165,13 @@ async function executeLab(module: string, action: string): Promise<IpcResult<{ m
     return ipcOk({ message: `safeStorage 加密可用: ${safeStorage.isEncryptionAvailable()}` })
   }
 
-  if (module === 'metrics' && action === 'refresh') {
-    return ipcOk({ message: `进程数: ${app.getAppMetrics().length}` })
+  if (module === 'metrics') {
+    if (action === 'refresh') {
+      return ipcOk({ message: `进程数: ${app.getAppMetrics().length}` })
+    }
+    if (action === 'recent-gone') {
+      return ipcOk({ message: recentProcessEventsMessage() })
+    }
   }
 
   if (module === 'advanced') {
@@ -241,26 +235,7 @@ export function registerLabIpc(): void {
 
   ipcMain.handle('lab:events', () => {
     try {
-      const rows = getDatabase()
-        .prepare('SELECT * FROM lab_events ORDER BY created_at DESC LIMIT 50')
-        .all() as Array<{
-        id: number
-        module: string
-        action: string
-        ok: number
-        message: string
-        created_at: number
-      }>
-      return ipcOk(
-        rows.map((row) => ({
-          id: row.id,
-          module: row.module,
-          action: row.action,
-          ok: Boolean(row.ok),
-          message: row.message,
-          createdAt: row.created_at
-        }))
-      )
+      return ipcOk(listLabEvents())
     } catch (error) {
       return mapLabError(error)
     }

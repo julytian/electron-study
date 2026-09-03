@@ -10,6 +10,14 @@ describe('cspHeader', () => {
     expect(match?.[1]).toBeTruthy()
     expect(cspHeader()).toBe(match?.[1])
   })
+
+  it('keeps style unsafe-inline and adds object base-uri frame-ancestors', () => {
+    const header = cspHeader()
+    expect(header).toContain("style-src 'self' 'unsafe-inline'")
+    expect(header).toContain("object-src 'none'")
+    expect(header).toContain("base-uri 'self'")
+    expect(header).toContain("frame-ancestors 'none'")
+  })
 })
 
 describe('shouldAttachCsp', () => {
