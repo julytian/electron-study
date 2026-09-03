@@ -13,6 +13,9 @@ import WindowChromeView from '../views/WindowChromeView.vue'
 import WindowPortsView from '../views/WindowPortsView.vue'
 import PortChildView from '../views/PortChildView.vue'
 import BrowserView from '../views/BrowserView.vue'
+import DownloadsView from '../views/DownloadsView.vue'
+import PrintView from '../views/PrintView.vue'
+import CaptureView from '../views/CaptureView.vue'
 
 const children = routeGroups.flatMap((group) =>
   group.items.map((item) => {
@@ -45,6 +48,15 @@ const children = routeGroups.flatMap((group) =>
     }
     if (item.path === '/browser') {
       return { path: item.path, component: BrowserView }
+    }
+    if (item.path === '/workbench/downloads') {
+      return { path: item.path, component: DownloadsView }
+    }
+    if (item.path === '/workbench/print') {
+      return { path: item.path, component: PrintView }
+    }
+    if (item.path === '/workbench/capture') {
+      return { path: item.path, component: CaptureView }
     }
     return { path: item.path, component: PlaceholderView }
   })

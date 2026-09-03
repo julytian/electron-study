@@ -1,6 +1,7 @@
 import { registerAppIpc } from './app'
 import { registerBrowserIpc } from './browser'
 import { registerClipboardIpc } from './clipboard'
+import { registerDownloadsIpc } from './downloads'
 import { registerFilesIpc } from './files'
 import { registerNotesIpc } from './notes'
 import { registerSystemIpc } from './system'
@@ -11,6 +12,7 @@ export function registerIpc(): void {
   registerNotesIpc()
   registerClipboardIpc()
   registerFilesIpc()
+  registerDownloadsIpc()
   registerSystemIpc()
   registerWindowsIpc()
   registerBrowserIpc()
