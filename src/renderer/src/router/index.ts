@@ -16,6 +16,7 @@ import BrowserView from '../views/BrowserView.vue'
 import DownloadsView from '../views/DownloadsView.vue'
 import PrintView from '../views/PrintView.vue'
 import CaptureView from '../views/CaptureView.vue'
+import NetworkLabView from '../views/lab/NetworkLabView.vue'
 
 const children = routeGroups.flatMap((group) =>
   group.items.map((item) => {
@@ -57,6 +58,9 @@ const children = routeGroups.flatMap((group) =>
     }
     if (item.path === '/workbench/capture') {
       return { path: item.path, component: CaptureView }
+    }
+    if (item.path === '/lab/network') {
+      return { path: item.path, component: NetworkLabView }
     }
     return { path: item.path, component: PlaceholderView }
   })

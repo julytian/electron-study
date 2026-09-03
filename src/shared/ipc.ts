@@ -60,6 +60,7 @@ export const invokeChannels = {
   'browser:go': true,
   'network:set-proxy': true,
   'network:set-filter': true,
+  'network:set-insecure-certs': true,
   'protocol:register': true,
   'updater:check': true,
   'updater:download': true,
@@ -138,6 +139,7 @@ export interface InvokeMap {
   'browser:go': { args: [action: 'back' | 'forward' | 'reload']; result: null }
   'network:set-proxy': { args: [rules: string]; result: null }
   'network:set-filter': { args: [enabled: boolean]; result: null }
+  'network:set-insecure-certs': { args: [enabled: boolean]; result: null }
   'protocol:register': { args: []; result: { ok: boolean } }
   'updater:check': { args: []; result: { status: UpdaterStatus; version?: string } }
   'updater:download': { args: []; result: null }

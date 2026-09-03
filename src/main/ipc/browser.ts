@@ -1,7 +1,12 @@
-import { ipcMain, WebContentsView } from 'electron'
+import { app, ipcMain, WebContentsView } from 'electron'
 import type { BrowserWindow } from 'electron'
 import { errorCodes, ipcError, ipcOk, type IpcResult } from '../../shared/ipc-result'
-import { getBrowserSession } from '../services/browser-session'
+import {
+  getBrowserSession,
+  setBrowserInsecureCerts,
+  setBrowserProxyRules,
+  setBrowserRequestFilter
+} from '../services/browser-session'
 import { getMainWindow } from '../windows/main'
 import { browserViewBounds, isBrowserRoute, normalizeBrowserUrl } from '../windows/browser-policy'
 
@@ -118,8 +123,40 @@ export function watchBrowserRoute(win: BrowserWindow): void {
   win.on('closed', () => detachBrowserView())
 }
 
+function setNetworkFilter(enabled: unknown): IpcResult<null> {
+  if (typeof enabled !== 'boolean') {
+    return ipcError(errorCodes.VALIDATION, '过滤开关无效')
+  }
+  setBrowserRequestFilter(enabled)
+  return ipcOk(null)
+}
+
+async function setNetworkProxy(rules: unknown): Promise<IpcResult<null>> {
+  if (typeof rules !== 'string') {
+    return ipcError(errorCodes.VALIDATION, '代理规则无效')
+  }
+  await setBrowserProxyRules(rules)
+  return ipcOk(null)
+}
+
+function setInsecureCerts(enabled: unknown): IpcResult<null> {
+  if (typeof enabled !== 'boolean') {
+    return ipcError(errorCodes.VALIDATION, '证书开关无效')
+  }
+  const result = setBrowserInsecureCerts(enabled, app.isPackaged)
+  if (!result.ok) {
+    return ipcError(errorCodes.PLATFORM, '正式包不允许关闭证书校验')
+  }
+  return ipcOk(null)
+}
+
 export function registerBrowserIpc(): void {
   ipcMain.handle('browser:create', () => attachBrowserView())
   ipcMain.handle('browser:navigate', (_event, url: unknown) => navigateBrowser(url))
   ipcMain.handle('browser:go', (_event, action: unknown) => goBrowser(action))
+  ipcMain.handle('network:set-filter', (_event, enabled: unknown) => setNetworkFilter(enabled))
+  ipcMain.handle('network:set-proxy', (_event, rules: unknown) => setNetworkProxy(rules))
+  ipcMain.handle('network:set-insecure-certs', (_event, enabled: unknown) =>
+    setInsecureCerts(enabled)
+  )
 }
