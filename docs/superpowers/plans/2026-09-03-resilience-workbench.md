@@ -193,12 +193,7 @@ function mapLabEventRows(rows: LabEventRow[]): LabEvent[] {
   }))
 }
 
-export function recordLabEvent(
-  module: string,
-  action: string,
-  ok: boolean,
-  message: string
-): void {
+export function recordLabEvent(module: string, action: string, ok: boolean, message: string): void {
   try {
     getDatabase()
       .prepare(
@@ -275,15 +270,15 @@ export function notifyMainWindowCreated(): void {
 把 `child-process-gone` 改成先拼 message 再记日志：
 
 ```ts
-  app.on('child-process-gone', (_event, details) => {
-    const message = formatChildProcessGoneMessage({
-      type: details.type || 'unknown',
-      reason: details.reason || 'unknown',
-      exitCode: details.exitCode ?? 'unknown'
-    })
-    log.warn(message)
-    recordLabEvent('process', 'child-process-gone', false, message)
+app.on('child-process-gone', (_event, details) => {
+  const message = formatChildProcessGoneMessage({
+    type: details.type || 'unknown',
+    reason: details.reason || 'unknown',
+    exitCode: details.exitCode ?? 'unknown'
   })
+  log.warn(message)
+  recordLabEvent('process', 'child-process-gone', false, message)
+})
 ```
 
 `attachProcessRecovery` 开头仍可调用一次 `hookMainLoadReset()`（窗可能还不在，空转即可）。
@@ -299,7 +294,7 @@ import { notifyMainWindowCreated } from '../services/process-recovery'
 `createMainWindow` 在 `loadMainWindow(mainWindow, hash)` 之后、`return mainWindow` 之前加一行：
 
 ```ts
-  notifyMainWindowCreated()
+notifyMainWindowCreated()
 ```
 
 不要在 `index.ts` 再散落调用。`sandbox` / `contextIsolation` / `nodeIntegration` 保持现有值，不要改 `webPreferences`。
@@ -342,12 +337,16 @@ import { powerChangedPayload, powerSnapshot, readOnlineFlag } from '../src/share
 
 describe('powerSnapshot', () => {
   it('maps injected online flags', () => {
-    expect(
-      powerSnapshot({ onBattery: true, idleState: 'active', isOnline: true })
-    ).toEqual({ onBattery: true, idleState: 'active', online: true })
-    expect(
-      powerSnapshot({ onBattery: false, idleState: 'idle', isOnline: false })
-    ).toEqual({ onBattery: false, idleState: 'idle', online: false })
+    expect(powerSnapshot({ onBattery: true, idleState: 'active', isOnline: true })).toEqual({
+      onBattery: true,
+      idleState: 'active',
+      online: true
+    })
+    expect(powerSnapshot({ onBattery: false, idleState: 'idle', isOnline: false })).toEqual({
+      onBattery: false,
+      idleState: 'idle',
+      online: false
+    })
   })
 })
 
@@ -471,34 +470,34 @@ import { powerChangedPayload, powerSnapshot, readOnlineFlag } from '../../shared
 `system:get-power`：
 
 ```ts
-  ipcMain.handle('system:get-power', () =>
-    ipcOk(
-      powerSnapshot({
-        onBattery: powerMonitor.isOnBatteryPower(),
-        idleState: powerMonitor.getSystemIdleState(60),
-        isOnline: readOnlineFlag(() => net.isOnline())
-      })
-    )
+ipcMain.handle('system:get-power', () =>
+  ipcOk(
+    powerSnapshot({
+      onBattery: powerMonitor.isOnBatteryPower(),
+      idleState: powerMonitor.getSystemIdleState(60),
+      isOnline: readOnlineFlag(() => net.isOnline())
+    })
   )
+)
 ```
 
 `sendPower`：
 
 ```ts
-  const sendPower = (): void => {
-    const win = getMainWindow()
-    if (!win || win.isDestroyed()) return
-    win.webContents.send(
-      'power:changed',
-      powerChangedPayload({
-        onBattery: powerMonitor.isOnBatteryPower(),
-        isOnline: readOnlineFlag(() => net.isOnline())
-      })
-    )
-  }
-  powerMonitor.on('on-ac', sendPower)
-  powerMonitor.on('on-battery', sendPower)
-  powerMonitor.on('resume', sendPower)
+const sendPower = (): void => {
+  const win = getMainWindow()
+  if (!win || win.isDestroyed()) return
+  win.webContents.send(
+    'power:changed',
+    powerChangedPayload({
+      onBattery: powerMonitor.isOnBatteryPower(),
+      isOnline: readOnlineFlag(() => net.isOnline())
+    })
+  )
+}
+powerMonitor.on('on-ac', sendPower)
+powerMonitor.on('on-battery', sendPower)
+powerMonitor.on('resume', sendPower)
 ```
 
 import 行改为 `import { app, ipcMain, nativeTheme, net, Notification, powerMonitor } from 'electron'`。不要加定时轮询。
@@ -508,10 +507,10 @@ import 行改为 `import { app, ipcMain, nativeTheme, net, Notification, powerMo
 `src/renderer/src/stores/app.ts`：`onBattery` 旁增加 `const online = ref<boolean | null>(null)`。`power:changed` 里同时赋值：
 
 ```ts
-    window.api.on('power:changed', (payload) => {
-      onBattery.value = payload.onBattery
-      online.value = payload.online
-    })
+window.api.on('power:changed', (payload) => {
+  onBattery.value = payload.onBattery
+  online.value = payload.online
+})
 ```
 
 `return` 里导出 `online`。
@@ -914,9 +913,9 @@ async function findInBrowser(
 `registerBrowserIpc` 增加：
 
 ```ts
-  ipcMain.handle('browser:find', (_event, query: unknown, action: unknown) =>
-    findInBrowser(query, action)
-  )
+ipcMain.handle('browser:find', (_event, query: unknown, action: unknown) =>
+  findInBrowser(query, action)
+)
 ```
 
 若 `Electron.Result` 类型报错，改成 `Parameters<Parameters<Electron.WebContents['on'] & Function>[1]>` 太绕。用：
@@ -1161,15 +1160,15 @@ EOF
 
 ## Self-review
 
-| 规格条目 | 任务 |
-| --- | --- |
-| 3.1 主窗重建重置计数 | Task 3 |
-| 3.2 子进程 gone 写日志 | Task 3 |
-| 3.3 recent-gone SQL | Task 2 |
-| 3.4 preload ports[0] | Task 1 |
-| 4 在线状态 | Task 4、Task 5 |
-| 5 页内查找 | Task 6、Task 7、Task 8 |
-| 6 错误码 | Task 6、Task 7 |
-| 7 测试与手验 | 各 TDD 任务 + Task 9 |
+| 规格条目               | 任务                   |
+| ---------------------- | ---------------------- |
+| 3.1 主窗重建重置计数   | Task 3                 |
+| 3.2 子进程 gone 写日志 | Task 3                 |
+| 3.3 recent-gone SQL    | Task 2                 |
+| 3.4 preload ports[0]   | Task 1                 |
+| 4 在线状态             | Task 4、Task 5         |
+| 5 页内查找             | Task 6、Task 7、Task 8 |
+| 6 错误码               | Task 6、Task 7         |
+| 7 测试与手验           | 各 TDD 任务 + Task 9   |
 
 未覆盖（刻意）：Playwright、发布/CI、实验室 B 期、`browser:found`、笔记导入导出。
