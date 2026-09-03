@@ -1,7 +1,11 @@
 import { app } from 'electron'
 import { existsSync } from 'node:fs'
 import { getDatabase } from './db'
-import { pathsForAddRecentDocument, type RecentRow } from './recent-sync'
+import {
+  collapseDuplicateRecentRows,
+  pathsForAddRecentDocument,
+  type RecentRow
+} from './recent-sync'
 import { refreshWindowsJumpList } from '../platforms/win'
 
 export function queryRecentRows(): RecentRow[] {
@@ -21,6 +25,7 @@ export function purgeMissingRecentFiles(): number {
     db.prepare('DELETE FROM recent_files WHERE path = ?').run(row.path)
     removed += 1
   }
+  collapseDuplicateRecentRows(db)
   return removed
 }
 

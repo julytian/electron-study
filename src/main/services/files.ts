@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import type Database from 'better-sqlite3'
 import type { RecentFile } from '../../shared/models'
 import { assertWithinRoot } from './path-jail'
-import { RECENT_FILE_LIMIT } from './recent-sync'
+import { RECENT_FILE_LIMIT, dedupeRecentRows } from './recent-sync'
 
 export const MAX_TEXT_BYTES = 2 * 1024 * 1024
 
@@ -136,10 +136,11 @@ export function createFilesService(
       const rows = db
         .prepare('SELECT id, path, opened_at FROM recent_files ORDER BY opened_at DESC')
         .all() as Array<{ id: number; path: string; opened_at: number }>
-      return rows
-        .filter((row) => existsSync(row.path))
-        .map((row) => ({ id: row.id, path: row.path, openedAt: row.opened_at }))
-        .slice(0, RECENT_FILE_LIMIT)
+      return dedupeRecentRows(
+        rows
+          .filter((row) => existsSync(row.path))
+          .map((row) => ({ id: row.id, path: row.path, openedAt: row.opened_at }))
+      ).slice(0, RECENT_FILE_LIMIT)
     },
     openRecent(target: string) {
       const filePath = resolve(target)
@@ -159,7 +160,13 @@ export function createFilesService(
     },
     forget(target?: string) {
       if (target === undefined) {
+        const paths = (
+          db.prepare('SELECT path FROM recent_files').all() as Array<{ path: string }>
+        ).map((row) => row.path)
         db.prepare('DELETE FROM recent_files').run()
+        for (const filePath of paths) {
+          allowlist.delete(filePath)
+        }
         return
       }
       const filePath = resolve(target)

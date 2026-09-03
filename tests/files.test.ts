@@ -343,4 +343,41 @@ describe('files service', () => {
     expect(service.listRecent()).toEqual([])
     expect(recentPaths(db)).toEqual([])
   })
+
+  it('forget() with no target revokes allowlist so outsider trash and assertAllowed throw E_PATH', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const outsider = join(root, 'session.txt')
+    writeFileSync(outsider, 'opened then forgotten')
+    const service = createFilesService(
+      memoryDb(),
+      userData,
+      stubDialogs({ open: outsider }),
+      stubShell()
+    )
+    await service.open()
+    expect(service.assertAllowed(outsider)).toBe(resolve(outsider))
+
+    service.forget()
+
+    expect(() => service.assertAllowed(outsider)).toThrowError(/E_PATH/)
+    await expect(service.trash(outsider)).rejects.toThrowError(/E_PATH/)
+  })
+
+  it('listRecent returns one row when the same path was inserted twice', () => {
+    const root = mkdtempSync(join(tmpdir(), 'elab-files-'))
+    const userData = mkdtempSync(join(tmpdir(), 'elab-ud-'))
+    const file = join(root, 'legacy-dup.txt')
+    writeFileSync(file, 'dup history')
+    const db = memoryDb()
+    const resolved = resolve(file)
+    db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run(resolved, 1000)
+    db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run(resolved, 2000)
+
+    const listed = createFilesService(db, userData, stubDialogs({}), stubShell()).listRecent()
+
+    expect(listed).toHaveLength(1)
+    expect(listed[0].path).toBe(resolved)
+    expect(listed[0].openedAt).toBe(2000)
+  })
 })

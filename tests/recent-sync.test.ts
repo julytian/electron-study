@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import Database from 'better-sqlite3'
+import { migrate } from '../src/main/services/db/migrations'
 import {
   RECENT_FILE_LIMIT,
+  collapseDuplicateRecentRows,
   dedupeRecentRows,
   filterExistingPaths,
   pathsForAddRecentDocument,
@@ -17,6 +20,27 @@ describe('dedupeRecentRows', () => {
     expect(dedupeRecentRows(rows)).toEqual([
       { path: '/b.md', openedAt: 3 },
       { path: '/a.md', openedAt: 2 }
+    ])
+  })
+})
+
+describe('collapseDuplicateRecentRows', () => {
+  it('keeps the newest opened_at row per path and deletes extras', () => {
+    const db = new Database(':memory:')
+    migrate(db)
+    db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run('/a.md', 1)
+    db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run('/a.md', 3)
+    db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run('/a.md', 2)
+    db.prepare('INSERT INTO recent_files (path, opened_at) VALUES (?, ?)').run('/b.md', 4)
+
+    const removed = collapseDuplicateRecentRows(db)
+
+    expect(removed).toBe(2)
+    expect(
+      db.prepare('SELECT path, opened_at FROM recent_files ORDER BY path').all()
+    ).toEqual([
+      { path: '/a.md', opened_at: 3 },
+      { path: '/b.md', opened_at: 4 }
     ])
   })
 })
